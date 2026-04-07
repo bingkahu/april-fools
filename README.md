@@ -69,7 +69,7 @@ that probably shouldn't exist.
 
 ## Deployment
 
-Cloudflare Pages. Drop the files in. Click deploy. It runs. There is nothing to build.
+Cloudflare Pages: (coming)
 
 The `_headers` file adds some fun response headers to every page including:
 
