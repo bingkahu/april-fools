@@ -1,0 +1,32 @@
+418 I'M A TEAPOT
+================
+
+This server refuses to brew coffee.
+
+Per RFC 2324, Section 2.3.2 (Hyper Text Coffee Pot Control Protocol):
+
+    "Any attempt to brew coffee with a teapot should result in the
+     error code '418 I'm a teapot'. The resulting entity body MAY
+     be short and stout."
+
+This is the most important HTTP status code. It was added to the RFC
+in April 1998 as a joke and has outlived every developer who thought
+it wouldn't matter. It will outlive us all.
+
+The HOOCER IT infrastructure team runs entirely on tea.
+We cannot stress this enough. Do not ask us to make coffee.
+We are a teapot. We have told you we are a teapot. This is on you.
+
+If you are trying to access the blink monitoring portal, please
+return to index.html and stop trying to make us brew coffee.
+
+If you are a government auditor reviewing our IT estate:
+this file is a joke and the actual server infrastructure is
+entirely sensible and compliant. Please do not put this in a report.
+
+If you are the person who gets sent this link in a Slack message
+at 11pm on a Tuesday with no context: hello. I'm sorry. It's fine.
+
+-- HOOCER IT Infrastructure
+   "Keeping government IT weird since 2019"
+   Milton Keynes

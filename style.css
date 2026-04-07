@@ -1,0 +1,966 @@
+/* style.css
+   -------------------------------------------------------
+   HOOCER — HM Office for Ocular Compliance & Eyelid Regulation
+   -------------------------------------------------------
+   design brief: "official government website but slightly wrong"
+   actual outcome: this
+
+   I tried to use GOV.UK's design system. I got about 60%
+   of the way there and then I had another coffee and things
+   went sideways. The resulting aesthetic is best described as
+   "what if the UK government website was stressed."
+
+   if you're inspecting this CSS, hello. you're blinking right now.
+   we've noted it.
+   -------------------------------------------------------
+*/
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* GOV.UK colour palette. I did not invent these.
+     I did, however, use them with reckless abandon. */
+  --gov-black:      #0b0c0c;
+  --gov-green:      #00703c;
+  --gov-green-dark: #005a30;
+  --gov-yellow:     #ffdd00;
+  --gov-red:        #d4351c;
+  --gov-red-dark:   #aa2b16;
+  --gov-blue:       #1d70b8;
+  --gov-blue-dark:  #165490;
+  --gov-light-grey: #f3f2f1;
+  --gov-mid-grey:   #b1b4b6;
+  --gov-dark-grey:  #505a5f;
+  --warning-orange: #f47738;
+  --terminal-green: #00ff41; /* purely for the hacker feed. no regrets. */
+}
+
+html {
+  scroll-behavior: smooth; /* unnecessary for a single page. done anyway. */
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  /* tried to load GDS Transport here. it's not a Google Font.
+     spent 8 minutes trying to find it. gave up. Arial it is. */
+  background: var(--gov-light-grey);
+  color: var(--gov-black);
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* -------------------------------------------------------
+   SCREEN MANAGEMENT
+   all screens hidden by default.
+   the splash has .active in the HTML for a flash-free load.
+   (this is the single most competent engineering decision
+    in this entire project)
+   ------------------------------------------------------- */
+.screen {
+  display: none;
+  min-height: calc(100vh - 80px); /* leave room for footer */
+  flex-direction: column;
+}
+
+.screen.active {
+  display: flex;
+}
+
+/* -------------------------------------------------------
+   SPLASH SCREEN
+   ------------------------------------------------------- */
+#splash {
+  align-items: center;
+  justify-content: center;
+  background: var(--gov-black);
+  color: #fff;
+  padding: 40px 20px;
+  text-align: center;
+  gap: 22px;
+  min-height: 100vh;
+}
+
+.crown {
+  font-size: 72px;
+  line-height: 1;
+  /* couldn't find an SVG crown. used unicode.
+     looks fine. totally official. */
+}
+
+.department-seal {
+  width: 130px;
+  height: 130px;
+  border: 3px solid rgba(255,255,255,0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* the dotted ring around the seal.
+   12 minutes to get this right. not a single person will notice. */
+.department-seal::before {
+  content: '·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·';
+  position: absolute;
+  top: 4px; left: 4px; right: 4px; bottom: 4px;
+  border-radius: 50%;
+  font-size: 7px;
+  letter-spacing: 3px;
+  overflow: hidden;
+  opacity: 0.35;
+  word-break: break-all;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.seal-inner {
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 5px;
+  z-index: 1;
+}
+
+#splash h1 {
+  font-size: 1.9rem;
+  font-weight: bold;
+  max-width: 520px;
+  line-height: 1.3;
+  letter-spacing: 0.3px;
+}
+
+.official-notice {
+  background: var(--gov-yellow);
+  color: var(--gov-black);
+  padding: 6px 18px;
+  font-weight: bold;
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+}
+
+.warning-box {
+  background: rgba(255,255,255,0.07);
+  border-left: 5px solid var(--gov-yellow);
+  padding: 18px 20px;
+  max-width: 560px;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+/* -------------------------------------------------------
+   BUTTONS
+   ------------------------------------------------------- */
+.btn-primary {
+  background: var(--gov-green);
+  color: #fff;
+  border: none;
+  padding: 14px 28px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  font-family: inherit;
+  transition: background 0.1s;
+}
+
+.btn-primary:hover  { background: var(--gov-green-dark); }
+.btn-primary:active { background: #003d20; transform: translateY(1px); }
+.btn-primary:disabled {
+  background: var(--gov-mid-grey);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-deny {
+  background: var(--gov-red);
+  color: #fff;
+  border: none;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  letter-spacing: 1px;
+  font-family: inherit;
+  margin-bottom: 5px;
+  transition: background 0.1s;
+}
+
+.btn-deny:hover { background: var(--gov-red-dark); }
+.btn-deny:active { transform: translateY(1px); }
+
+.btn-pay {
+  background: var(--gov-mid-grey);
+  color: #fff;
+  border: none;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: not-allowed; /* intentional. the button does nothing. */
+  font-family: inherit;
+  opacity: 0.75;
+}
+
+.btn-appeal {
+  background: var(--gov-blue);
+  color: #fff;
+  border: none;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s;
+}
+
+.btn-appeal:hover { background: var(--gov-blue-dark); }
+
+.small-print {
+  font-size: 11px;
+  opacity: 0.45;
+  max-width: 420px;
+  line-height: 1.5;
+}
+
+/* -------------------------------------------------------
+   PORTAL HEADER
+   ------------------------------------------------------- */
+.portal-header {
+  background: var(--gov-black);
+  color: #fff;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.portal-header > span:nth-child(2) {
+  flex: 1;
+  font-weight: bold;
+}
+
+.red-header { background: var(--gov-red); }
+
+.crown-small {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.case-ref {
+  font-size: 11px;
+  opacity: 0.65;
+  font-family: monospace;
+  flex-shrink: 0;
+}
+
+/* -------------------------------------------------------
+   MONITOR SCREEN — main layout
+   ------------------------------------------------------- */
+#monitor {
+  background: var(--gov-light-grey);
+}
+
+.main-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  flex: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 20px;
+}
+
+@media (max-width: 700px) {
+  .main-content { grid-template-columns: 1fr; }
+  .left-panel { border-right: none; border-bottom: 2px solid #ccc; }
+}
+
+.left-panel { padding: 20px; border-right: 2px solid #d0ceca; }
+.right-panel { padding: 20px; }
+
+.left-panel h2 {
+  font-size: 1.35rem;
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+
+/* THE BIG COUNTER BOX. this is load-bearing. */
+.blink-counter-box {
+  background: var(--gov-black);
+  color: #fff;
+  text-align: center;
+  padding: 28px 20px;
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* the scanning line. purely decorative. absolutely necessary. */
+.blink-counter-box::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--gov-green), transparent);
+  animation: scan 4s ease-in-out infinite;
+  top: 0;
+}
+
+@keyframes scan {
+  0%   { top: 0%; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.blink-number {
+  font-size: 5.5rem;
+  font-weight: bold;
+  font-family: "Courier New", monospace;
+  color: var(--gov-green);
+  transition: color 0.3s;
+  line-height: 1;
+}
+
+.blink-number.warning { color: var(--warning-orange); }
+
+.blink-number.danger {
+  color: var(--gov-red);
+  animation: danger-flicker 0.4s infinite;
+}
+
+@keyframes danger-flicker {
+  0%, 100% { opacity: 1; }
+  45%       { opacity: 0.75; }
+}
+
+.blink-label {
+  font-size: 11px;
+  letter-spacing: 4px;
+  opacity: 0.6;
+  margin-top: 10px;
+}
+
+.blink-sublabel {
+  font-size: 10px;
+  opacity: 0.35;
+}
+
+/* STATUS BAR */
+.status-bar {
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.status-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.status-dot.green {
+  background: var(--gov-green);
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+
+.status-dot.red {
+  background: var(--gov-red);
+  animation: dot-pulse 0.4s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
+}
+
+/* METRICS BOX — slightly rotated because I am chaotic */
+.blink-rate-box {
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  transform: rotate(-0.15deg); /* intentional. government forms are never quite straight. */
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.metric-row:last-child { border-bottom: none; }
+
+.metric-val {
+  font-family: "Courier New", monospace;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.green-text  { color: var(--gov-green); }
+.orange-text { color: var(--warning-orange); }
+.red-text    { color: var(--gov-red); }
+.mono        { font-family: "Courier New", monospace; }
+
+/* LEGAL THRESHOLD BOX */
+.legal-threshold {
+  background: var(--gov-yellow);
+  color: var(--gov-black);
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  line-height: 1.6;
+  border-left: 5px solid #c9a800;
+}
+
+.btn-note {
+  font-size: 11px;
+  color: var(--gov-dark-grey);
+  font-style: italic;
+  display: block;
+}
+
+/* PROGRESS BAR */
+.progress-section {
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 12px;
+}
+
+.progress-label {
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.progress-bar-outer {
+  background: #e0ddd8;
+  height: 22px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-inner {
+  height: 100%;
+  background: var(--gov-green);
+  transition: width 0.4s ease, background 0.4s;
+}
+
+.progress-bar-inner.warning { background: var(--warning-orange); }
+.progress-bar-inner.danger  { background: var(--gov-red); }
+
+/* RIGHT PANEL */
+.right-panel h3 { font-size: 1.1rem; margin-bottom: 4px; letter-spacing: 1px; }
+
+.feed-subtitle {
+  font-size: 11px;
+  color: var(--gov-dark-grey);
+  margin-bottom: 10px;
+}
+
+/* THE HACKER FEED. green on black. no notes. */
+.blink-feed {
+  background: var(--gov-black);
+  color: var(--terminal-green);
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  height: 200px;
+  overflow-y: auto;
+  padding: 10px;
+  margin-bottom: 6px;
+  /* scrollbar styling. because I had time. I did not have time. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--gov-green) #1a1a1a;
+}
+
+.blink-feed::-webkit-scrollbar { width: 6px; }
+.blink-feed::-webkit-scrollbar-track { background: #1a1a1a; }
+.blink-feed::-webkit-scrollbar-thumb { background: var(--gov-green); }
+
+.feed-item {
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(0,255,65,0.1);
+  animation: feed-in 0.25s ease forwards;
+}
+
+.feed-item.infringement { color: #ff6b6b; }
+
+@keyframes feed-in {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.feed-note {
+  font-size: 10px;
+  color: var(--gov-dark-grey);
+  font-style: italic;
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+.did-you-know {
+  background: var(--gov-blue);
+  color: #fff;
+  padding: 14px;
+  font-size: 13px;
+  line-height: 1.65;
+  transition: opacity 0.5s;
+}
+
+/* -------------------------------------------------------
+   FINE SCREEN
+   ------------------------------------------------------- */
+#fine { background: var(--gov-light-grey); }
+
+.fine-notice {
+  max-width: 720px;
+  margin: 24px auto;
+  padding: 0 20px;
+  width: 100%;
+}
+
+.fine-banner {
+  background: var(--gov-red);
+  color: #fff;
+  text-align: center;
+  padding: 16px;
+  font-size: 1.25rem;
+  font-weight: bold;
+  letter-spacing: 3px;
+  margin-bottom: 0;
+}
+
+/* the actual fine document */
+.fine-body {
+  background: #fff;
+  border: 2px solid var(--gov-black);
+  border-top: none;
+  padding: 28px 32px;
+  font-size: 14px;
+  line-height: 1.75;
+  position: relative;
+}
+
+/* watermark. my proudest CSS achievement on this project. */
+.fine-body::before {
+  content: 'OFFICIAL';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  font-size: 7rem;
+  font-weight: 900;
+  opacity: 0.04;
+  pointer-events: none;
+  color: var(--gov-red);
+  letter-spacing: 12px;
+  white-space: nowrap;
+}
+
+.fine-address {
+  border-left: 4px solid var(--gov-black);
+  padding-left: 16px;
+  margin-bottom: 18px;
+  line-height: 1.8;
+}
+
+.fine-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0;
+  font-size: 13px;
+}
+
+.fine-table td {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  vertical-align: top;
+}
+
+.fine-table td:last-child {
+  font-family: "Courier New", monospace;
+  font-weight: bold;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.fine-total-row td {
+  background: var(--gov-black);
+  color: #fff;
+  font-size: 15px;
+  border-color: var(--gov-black);
+}
+
+.payment-note {
+  background: #fff8e1;
+  border-left: 5px solid var(--warning-orange);
+  padding: 12px 16px;
+  font-size: 13px;
+  margin: 16px 0;
+  line-height: 1.65;
+}
+
+.fine-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+
+/* -------------------------------------------------------
+   APPEAL FORM
+   ------------------------------------------------------- */
+#appeal { background: var(--gov-light-grey); }
+
+.appeal-wrapper {
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.appeal-intro {
+  padding: 20px 20px 0;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.form-section {
+  padding: 20px;
+  border-bottom: 1px solid #d0ceca;
+}
+
+.form-section:last-of-type { border-bottom: none; }
+
+.form-section h3 {
+  font-size: 1.05rem;
+  margin-bottom: 18px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--gov-black);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.form-group { margin-bottom: 20px; }
+
+.form-group > label {
+  display: block;
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 7px;
+}
+
+.form-group input[type="text"],
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 2px solid var(--gov-black);
+  font-size: 16px;
+  font-family: inherit;
+  background: #fff;
+  border-radius: 0; /* deliberately no border radius. this is a GOVERNMENT form. */
+}
+
+.form-group input[type="text"]:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: 3px solid var(--gov-yellow);
+  outline-offset: 0;
+}
+
+.form-group textarea {
+  resize: vertical;
+  font-size: 14px;
+  min-height: 120px;
+}
+
+.field-note {
+  display: block;
+  font-size: 12px;
+  color: var(--gov-dark-grey);
+  font-style: italic;
+  margin-top: 5px;
+  line-height: 1.5;
+}
+
+.radio-group, .checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 12px;
+}
+
+.radio-group label, .checkbox-group label {
+  font-weight: normal;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 2px;
+  transition: background 0.1s;
+  line-height: 1.4;
+}
+
+.radio-group label:hover, .checkbox-group label:hover {
+  background: var(--gov-light-grey);
+}
+
+.radio-group input[type="radio"],
+.checkbox-group input[type="checkbox"] {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.form-group input[type="range"] {
+  width: 100%;
+  margin: 8px 0 4px;
+  accent-color: var(--gov-green);
+}
+
+.declaration-label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-weight: normal !important;
+  cursor: pointer;
+  line-height: 1.65;
+}
+
+.declaration-label input { margin-top: 4px; flex-shrink: 0; }
+
+.processing-msg {
+  text-align: center;
+  padding: 24px;
+  font-size: 15px;
+  color: var(--gov-dark-grey);
+  animation: fade-in 0.3s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.spinner {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 12px;
+  animation: spin 1.2s linear infinite;
+  color: var(--gov-green);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* -------------------------------------------------------
+   DENIED SCREEN
+   ------------------------------------------------------- */
+#denied { background: var(--gov-light-grey); }
+
+.denied-wrapper {
+  max-width: 720px;
+  margin: 24px auto;
+  padding: 0 20px;
+  width: 100%;
+}
+
+.denied-box {
+  background: #fff;
+  border: 2px solid var(--gov-red);
+  padding: 28px 32px;
+  font-size: 14px;
+  line-height: 1.75;
+  position: relative;
+}
+
+/* THE STAMP. this is the best thing I've ever made with CSS.
+   I will be putting this in my CV. */
+.denied-stamp {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  border: 5px solid var(--gov-red);
+  color: var(--gov-red);
+  padding: 10px 14px;
+  font-size: 1.3rem;
+  font-weight: 900;
+  text-align: center;
+  transform: rotate(7deg);
+  letter-spacing: 3px;
+  opacity: 0.82;
+  text-transform: uppercase;
+  line-height: 1.3;
+  pointer-events: none;
+  /* a rubber stamp, approximated in CSS, on a fake government fine denial,
+     on a website about blinking. I need to go outside. */
+}
+
+.denied-box h2 {
+  font-size: 1.3rem;
+  margin-bottom: 16px;
+  margin-top: 0;
+  padding-right: 180px; /* leave room for the stamp */
+  line-height: 1.4;
+}
+
+.denied-box p { margin-bottom: 14px; }
+
+.denial-reason-box {
+  background: #fff3f3;
+  border-left: 5px solid var(--gov-red);
+  padding: 14px 18px;
+  margin: 18px 0;
+  line-height: 1.75;
+}
+
+.big-fine {
+  font-size: 1.5rem;
+  color: var(--gov-red);
+  font-family: "Courier New", monospace;
+}
+
+.what-next {
+  background: var(--gov-light-grey);
+  border: 1px solid #ccc;
+  padding: 14px 18px;
+  margin: 18px 0;
+  font-size: 14px;
+}
+
+.what-next ul {
+  margin-top: 8px;
+  padding-left: 20px;
+}
+
+.what-next li { margin-bottom: 8px; line-height: 1.5; }
+
+/* -------------------------------------------------------
+   FOOTER
+   it's at the bottom. it knows what it did.
+   ------------------------------------------------------- */
+.site-footer {
+  background: var(--gov-black);
+  color: rgba(255,255,255,0.55);
+  padding: 20px;
+  font-size: 12px;
+  text-align: center;
+  line-height: 2.2;
+  flex-shrink: 0;
+}
+
+.footer-top {
+  color: rgba(255,255,255,0.8);
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.site-footer a {
+  color: rgba(255,255,255,0.4);
+  text-decoration: underline;
+}
+
+.site-footer a:hover { color: rgba(255,255,255,0.75); }
+
+.footer-disclaimer {
+  font-size: 11px;
+  opacity: 0.35;
+  font-style: italic;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+/* -------------------------------------------------------
+   THE FOOTER DISCLAIMER EASTER EGG
+   hover over it. go on.
+   (this is the most important CSS rule in the file)
+   ------------------------------------------------------- */
+.footer-disclaimer:hover {
+  font-family: "Comic Sans MS", "Comic Sans", cursive;
+  opacity: 1;
+  color: var(--gov-yellow);
+  transition: all 0.2s;
+}
+
+/* -------------------------------------------------------
+   KONAMI CODE OVERLAY
+   (inline styles handle most of this in JS,
+    but this class is here for... nostalgia)
+   ------------------------------------------------------- */
+.konami-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.konami-box {
+  background: var(--gov-yellow);
+  color: var(--gov-black);
+  padding: 36px 40px;
+  max-width: 460px;
+  text-align: center;
+  border: 4px solid var(--gov-black);
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.konami-box h2 {
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+}
+
+/* -------------------------------------------------------
+   MISC UTILS
+   ------------------------------------------------------- */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  #splash h1         { font-size: 1.4rem; }
+  .blink-number      { font-size: 4rem; }
+  .fine-body         { padding: 16px 18px; }
+  .denied-box        { padding: 16px 18px; }
+  .denied-box h2     { padding-right: 0; }
+  .denied-stamp      { position: static; transform: rotate(2deg); display: inline-block; margin-bottom: 16px; }
+}

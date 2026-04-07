@@ -1,0 +1,25 @@
+{
+  "name": "HOOCER — HM Ocular Compliance Portal",
+  "short_name": "HOOCER",
+  "description": "Official HM Office for Ocular Compliance & Eyelid Regulation citizen portal. Definitely legitimate. Your blinks are being monitored.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0c0c",
+  "theme_color": "#00703c",
+  "lang": "en-GB",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230b0c0c'/><text y='75' x='50' font-size='65' text-anchor='middle'>♛</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["government", "utilities", "lifestyle", "productivity"],
+  "screenshots": [],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "_note_to_self": "I added a PWA manifest to a joke website about blinking. This is fine. Everything is fine.",
+  "_another_note": "The icon is a crown emoji in an SVG data URI. The manifest is 98% comments. This project has gotten away from me.",
+  "_final_note": "If someone actually installs this as a PWA I want to know about it immediately."
+}
