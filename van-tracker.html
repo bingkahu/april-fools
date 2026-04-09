@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <title>Mobile Enforcement Van Tracker — HOOCER</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="compliance-score.js" defer></script>
+  <style>
+    body { margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--gov-light-grey); display:flex; flex-direction:column; min-height:100vh; }
+
+    .tracker-grid {
+      display:grid;
+      grid-template-columns:1fr 320px;
+      gap:0;
+      flex:1;
+    }
+    @media(max-width:720px){ .tracker-grid { grid-template-columns:1fr; } }
+
+    /* MAP */
+    .van-map {
+      background:#d4c9b4;
+      position:relative;
+      overflow:hidden;
+      min-height:400px;
+      display:flex;
+      align-items:stretch;
+    }
+
+    .van-map-svg { flex:1; }
+
+    /* Van icon - I spent way too long on this van.
+       It's CSS. It's a van. It took 45 minutes. */
+    .van-marker {
+      position:absolute;
+      font-size:28px;
+      transform:translate(-50%,-50%);
+      transition:left 5s ease-in-out, top 5s ease-in-out;
+      z-index:10;
+      filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+      cursor:default;
+    }
+
+    .van-pulse {
+      position:absolute;
+      width:0; height:0;
+      border-radius:50%;
+      border:2px solid var(--gov-red);
+      transform:translate(-50%,-50%);
+      z-index:9;
+      animation:van-ping 2s ease-out infinite;
+      transition:left 5s ease-in-out, top 5s ease-in-out;
+    }
+
+    @keyframes van-ping {
+      0%   { width:0; height:0; opacity:0.9; }
+      100% { width:70px; height:70px; opacity:0; }
+    }
+
+    /* Fake road lines on the map SVG */
+    .road { stroke:#fff; stroke-width:2; fill:none; opacity:0.4; }
+    .road-major { stroke:#ffdd00; stroke-width:3; }
+
+    /* Citizen markers — scattered dots representing "blink suspects" */
+    .citizen-marker { fill:#d4351c; opacity:0.65; }
+
+    /* ETA DISPLAY */
+    .eta-panel {
+      background:var(--gov-black);
+      color:#fff;
+      padding:20px;
+      text-align:center;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+
+    .eta-label { font-size:11px; letter-spacing:3px; opacity:0.45; text-transform:uppercase; margin-bottom:6px; }
+    .eta-value { font-size:3.5rem; font-family:"Courier New",monospace; font-weight:bold; color:var(--gov-red); line-height:1; }
+    .eta-unit  { font-size:13px; opacity:0.5; margin-top:4px; }
+    .eta-sub   { font-size:12px; opacity:0.55; margin-top:12px; line-height:1.5; }
+
+    /* VAN STATUS LOG */
+    .status-panel { padding:14px; background:var(--gov-black); color:#fff; flex:1; }
+
+    .status-panel h4 { font-size:10px; letter-spacing:2px; opacity:0.4; margin-bottom:10px; }
+
+    .van-status-log {
+      background:#0a0a0a;
+      color:var(--terminal-green);
+      font-family:"Courier New",monospace;
+      font-size:11px;
+      height:220px;
+      overflow-y:auto;
+      padding:8px;
+      scrollbar-width:thin;
+      scrollbar-color:var(--gov-green) #111;
+      margin-bottom:14px;
+    }
+
+    .log-entry { padding:3px 0; border-bottom:1px solid rgba(0,255,65,0.07); }
+    .log-entry.warning { color:#ffb347; }
+    .log-entry.error   { color:#ff6b6b; }
+
+    /* VAN DETAILS */
+    .van-detail-row {
+      display:flex;
+      justify-content:space-between;
+      font-size:12px;
+      padding:6px 0;
+      border-bottom:1px solid rgba(255,255,255,0.07);
+    }
+    .van-detail-row .dlabel { opacity:0.5; }
+    .van-detail-row .dval   { font-family:"Courier New",monospace; font-size:11px; color:var(--terminal-green); }
+
+    /* progress bar for "progress toward you" */
+    .arrival-bar {
+      height:8px;
+      background:rgba(255,255,255,0.08);
+      margin:14px 0;
+      position:relative;
+      overflow:hidden;
+    }
+    .arrival-bar-fill {
+      height:100%;
+      background:var(--gov-green);
+      transition:width 5s ease-in-out;
+    }
+
+    .disclaimer-panel {
+      background:#f8f5ee;
+      border-left:4px solid var(--warning-orange);
+      padding:12px 14px;
+      font-size:12px;
+      line-height:1.65;
+      margin:0 14px 14px;
+    }
+
+    /* RIGHT SIDEBAR */
+    .tracker-sidebar {
+      display:flex;
+      flex-direction:column;
+      border-left:1px solid rgba(255,255,255,0.05);
+    }
+  </style>
+</head>
+<body class="page-body">
+
+  <header class="page-header">
+    <span style="font-size:20px;">♛</span>
+    <span>HOOCER — Mobile Enforcement Van Tracker (MEVT)</span>
+    <span style="margin-left:auto;font-size:11px;opacity:0.5;font-family:monospace;">Code 418 Field Operations</span>
+  </header>
+
+  <nav class="site-nav">
+    <a href="index.html">⊙ Home</a>
+    <a href="blink-simulator.html">Blink Training</a>
+    <a href="surveillance-map.html">National Map</a>
+    <a href="van-tracker.html" style="background:var(--gov-yellow);color:var(--gov-black);">Van Tracker</a>
+    <a href="chatbot.html">Appeal Bot</a>
+    <a href="tribunal-audio.html">Tribunal Logs</a>
+    <a href="form-EYE-9.html">Form EYE-9</a>
+    <a href="intranet.html">Intranet ⚠</a>
+    <a href="gaslight.html">Compliance Check</a>
+  </nav>
+
+  <div style="background:var(--gov-red);color:#fff;padding:10px 16px;font-size:13px;font-weight:bold;text-align:center;letter-spacing:0.5px;">
+    ⚠ A HOOCER Mobile Enforcement Van has been dispatched to your area in response to Code 418 monitoring data.
+    This page shows its live location. The van will not arrive imminently. This is expected behaviour.
+  </div>
+
+  <div class="tracker-grid">
+
+    <!-- MAP PANEL -->
+    <div class="van-map">
+      <svg class="van-map-svg" id="vanMapSvg" viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg">
+        <!-- fake road network. these roads don't go anywhere in particular.
+             that's very on-brand for a government mapping system. -->
+        <rect width="500" height="400" fill="#d4c9b4"/>
+
+        <!-- fields / blocks -->
+        <rect x="0"   y="0"   width="180" height="150" fill="#c8bfa8"/>
+        <rect x="200" y="0"   width="300" height="100" fill="#cdc3ad"/>
+        <rect x="0"   y="170" width="120" height="230" fill="#c5bba5"/>
+        <rect x="300" y="150" width="200" height="250" fill="#cac0aa"/>
+        <rect x="140" y="200" width="150" height="200" fill="#d0c6b0"/>
+
+        <!-- major roads -->
+        <line x1="0" y1="160" x2="500" y2="160" stroke="#ffdd00" stroke-width="4" class="road road-major"/>
+        <line x1="250" y1="0" x2="250" y2="400" stroke="#ffdd00" stroke-width="4" class="road road-major"/>
+
+        <!-- minor roads -->
+        <line x1="0"   y1="80"  x2="500" y2="80"  class="road" stroke-width="1.5"/>
+        <line x1="0"   y1="280" x2="500" y2="280" class="road" stroke-width="1.5"/>
+        <line x1="125" y1="0"   x2="125" y2="400" class="road" stroke-width="1.5"/>
+        <line x1="375" y1="0"   x2="375" y2="400" class="road" stroke-width="1.5"/>
+        <line x1="60"  y1="160" x2="125" y2="80"  class="road" stroke-width="1"/>
+        <line x1="375" y1="160" x2="440" y2="80"  class="road" stroke-width="1"/>
+        <line x1="125" y1="280" x2="250" y2="400" class="road" stroke-width="1"/>
+
+        <!-- Place labels (fictional, loosely UK-ish) -->
+        <text x="50"  y="50"  fill="#8a7a60" font-size="9" font-family="Arial">Little Ocular</text>
+        <text x="310" y="50"  fill="#8a7a60" font-size="9" font-family="Arial">Blinkhaven</text>
+        <text x="30"  y="240" fill="#8a7a60" font-size="9" font-family="Arial">Lidbury</text>
+        <text x="360" y="240" fill="#8a7a60" font-size="9" font-family="Arial">Upper Cornea</text>
+        <text x="160" y="345" fill="#8a7a60" font-size="9" font-family="Arial">Squintwick</text>
+        <text x="210" y="140" fill="#6a5a40" font-size="11" font-family="Arial" font-weight="bold">HOOCER HQ</text>
+        <text x="210" y="152" fill="#6a5a40" font-size="8"  font-family="Arial">(Milton Keynes)</text>
+        <circle cx="250" cy="160" r="6" fill="#ffdd00" stroke="#aa8800" stroke-width="1.5"/>
+
+        <!-- "You are here" marker (approximate) -->
+        <circle cx="370" cy="290" r="5" fill="#1d70b8" opacity="0.8"/>
+        <text x="378" y="287" fill="#1d70b8" font-size="8" font-family="Arial">You</text>
+
+        <!-- Citizen suspects (dots representing blink cases in the area) -->
+        <circle cx="80"  cy="70"  r="3" class="citizen-marker"/>
+        <circle cx="420" cy="55"  r="3" class="citizen-marker"/>
+        <circle cx="150" cy="300" r="3" class="citizen-marker"/>
+        <circle cx="320" cy="330" r="3" class="citizen-marker"/>
+        <circle cx="450" cy="200" r="3" class="citizen-marker"/>
+        <circle cx="60"  cy="330" r="3" class="citizen-marker"/>
+        <circle cx="280" cy="50"  r="3" class="citizen-marker" opacity="0.9"/>
+      </svg>
+
+      <!-- Van marker — positioned absolutely, moves around -->
+      <div class="van-pulse" id="vanPulse" style="left:250px;top:160px;"></div>
+      <div class="van-marker" id="vanMarker" style="left:250px;top:160px;" title="HOOCER Mobile Enforcement Unit VAN-7">🚐</div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="tracker-sidebar">
+      <div class="eta-panel">
+        <div class="eta-label">Estimated Arrival</div>
+        <div class="eta-value" id="etaMinutes">--</div>
+        <div class="eta-unit">minutes</div>
+        <div style="margin-top:10px;">
+          <div class="arrival-bar"><div class="arrival-bar-fill" id="arrivalBar" style="width:0%"></div></div>
+        </div>
+        <div class="eta-sub" id="etaSub">Van dispatched. ETA calculating...</div>
+      </div>
+
+      <div class="status-panel">
+        <h4>VAN-7 STATUS LOG — LIVE</h4>
+        <div class="van-status-log" id="vanLog">
+          <!-- populated by JS -->
+        </div>
+
+        <div class="van-detail-row"><span class="dlabel">Unit ID:</span><span class="dval">VAN-7 / HOOCER-MEV</span></div>
+        <div class="van-detail-row"><span class="dlabel">Driver:</span><span class="dval" id="vanDriver">D. Thompson (Gd.6)</span></div>
+        <div class="van-detail-row"><span class="dlabel">Current speed:</span><span class="dval" id="vanSpeed">0 mph</span></div>
+        <div class="van-detail-row"><span class="dlabel">Direction:</span><span class="dval" id="vanDirection">Calculating...</span></div>
+        <div class="van-detail-row"><span class="dlabel">Fuel:</span><span class="dval" id="vanFuel">72%</span></div>
+        <div class="van-detail-row"><span class="dlabel">Code 418 equipment:</span><span class="dval">OPERATIONAL</span></div>
+        <div class="van-detail-row"><span class="dlabel">Last known coords:</span><span class="dval" id="vanCoords">MK HQ</span></div>
+      </div>
+
+      <div class="disclaimer-panel">
+        <strong>⚠ PLEASE NOTE:</strong> The van will not arrive imminently.
+        "Imminently" is not a category in HOOCER's operational guidelines.
+        The van will arrive when it arrives. Current operational delays are attributed
+        to traffic, lunch, and a situation near the A5 that we cannot discuss under
+        Code 418 Operational Confidentiality provisions. Thank you for your patience.
+        You do not need to prepare anything. You should, however, stop blinking.
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-top">♛ HOOCER — Mobile Enforcement Division</div>
+    <div>&copy; Crown Copyright 2026 &nbsp;|&nbsp; Code 418 Field Operations &nbsp;|&nbsp; <a href="LEGISLATION.md">Legislation</a></div>
+    <div class="footer-disclaimer">The van is fictional. No vans are actually dispatched. However, you should still reduce your blinking just in case.</div>
+  </footer>
+
+  <script>
+  // ---------------------------------------------------------------
+  // HOOCER Van Tracker — frontend module
+  //
+  // The van:
+  //   - starts at Milton Keynes HQ (centre of the map SVG)
+  //   - moves toward a random destination on each "update"
+  //   - NEVER arrives at the user's location
+  //   - The ETA fluctuates — sometimes goes down, sometimes up
+  //   - Occasionally stops for lunch, gets lost, or encounters "an incident"
+  //   - The status log updates with increasingly absurd explanations
+  //
+  // This is my favourite page on the site. I should seek help.
+  // ---------------------------------------------------------------
+
+  'use strict';
+
+  let vanX = 250; // SVG units, starts at MK HQ
+  let vanY = 160;
+  let eta  = 8 + Math.floor(Math.random() * 12); // starts 8-20 mins away
+  let progress = 5 + Math.random() * 15; // starts at low progress
+  let stalled = false;
+  let stallReason = '';
+
+  const DIRECTIONS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  const DRIVERS = ['D. Thompson (Gd.6)', 'B. Squint (Gd.5)', 'K. Lidsworth (Gd.6)', '[REDACTED]'];
+
+  // Status messages — the van is always having a time of it
+  const STATUS_EVENTS = [
+    { text: 'En route — approaching your zone via A-road network', type: 'normal' },
+    { text: 'Traffic delay — A5 junction. ETA recalculated.', type: 'warning' },
+    { text: 'Driver stopped for refreshments (mandatory Code 418 rest period)', type: 'warning' },
+    { text: 'Navigating one-way system near "Ocular Way" industrial estate', type: 'normal' },
+    { text: 'Code 418 equipment recalibrating — 3 minute hold', type: 'warning' },
+    { text: 'Van diverted — higher-priority blink incident in adjacent zone', type: 'warning' },
+    { text: 'GPS signal interrupted — switching to paper map (filed 2019, may be out of date)', type: 'warning' },
+    { text: 'Driver notes "suspicious blinking" in adjacent vehicle. Issuing roadside NOI.', type: 'normal' },
+    { text: 'Roadworks near "Eyelid Roundabout." Cause: unrelated to HOOCER. Probably.', type: 'warning' },
+    { text: 'Van resumed forward movement. Progress nominal.', type: 'normal' },
+    { text: 'Fuel stop. 8 minutes. Please remain in your current location.', type: 'warning' },
+    { text: 'Weather: overcast. Wind: 7mph SW. Blink risk elevated (Code 418 Annex D).', type: 'normal' },
+    { text: 'Driver confirms receipt of your Ocular Infringement Notice. Very thorough.', type: 'normal' },
+    { text: 'Slight delay — driver questioning whether right-hand turns are permitted under Schedule 7', type: 'warning' },
+    { text: 'Van stationary — driver completing mandatory paperwork. Form MEV-3 (Van Log).', type: 'warning' },
+    { text: 'Resuming. ETA revised upward slightly. This is normal.', type: 'normal' },
+    { text: 'Code 418(b) violation detected en route. Additional NOI issued. Not yours. Well, one of them is yours.', type: 'warning' },
+    { text: 'Driver consulting Eyelid Governance Act (pocket edition). Page 47 appears to be missing.', type: 'warning' },
+    { text: 'Van crossed into your postcode zone. Please remain calm. Please also stop blinking.', type: 'normal' },
+    { text: 'ETA revised — updated estimate based on revised revised estimate. See previous status.', type: 'warning' },
+    { text: 'Van temporarily lost. Last known position: "near some shops." Investigating.', type: 'error' },
+    { text: 'Van located. It was near some shops. Driver has completed a Van Location Form (VLF-2).', type: 'normal' },
+    { text: 'Driver notes the irony of monitoring blinks while driving. Filing this under "noted."', type: 'normal' },
+    { text: 'Stuck behind a tractor. This is not a Code 418 event. It is still annoying.', type: 'warning' },
+  ];
+
+  function addLogEntry(text, type = 'normal') {
+    const log = document.getElementById('vanLog');
+    if (!log) return;
+    const time = new Date().toLocaleTimeString('en-GB');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry' + (type !== 'normal' ? ' ' + type : '');
+    entry.textContent = `[${time}] ${text}`;
+    log.insertBefore(entry, log.firstChild);
+    while (log.children.length > 30) log.removeChild(log.lastChild);
+  }
+
+  function moveVan() {
+    if (stalled) return;
+
+    // Move toward a random point (but never 370,290 where the user "is")
+    const targetX = 80 + Math.random() * 340;
+    const targetY = 50 + Math.random() * 300;
+
+    // Move partway toward the target
+    vanX += (targetX - vanX) * 0.25;
+    vanY += (targetY - vanY) * 0.25;
+
+    // But snap away if getting too close to "You" marker
+    const distToUser = Math.sqrt((vanX - 370) ** 2 + (vanY - 290) ** 2);
+    if (distToUser < 40) {
+      vanX -= 45;
+      vanY -= 45;
+      addLogEntry('Van rerouted — operational protocol requires specific approach vector.', 'warning');
+    }
+
+    const vanEl    = document.getElementById('vanMarker');
+    const pulseEl  = document.getElementById('vanPulse');
+    const svgEl    = document.getElementById('vanMapSvg');
+    if (!vanEl || !svgEl) return;
+
+    // Convert SVG coords to %
+    const rect = svgEl.getBoundingClientRect();
+    const pctX = (vanX / 500) * 100;
+    const pctY = (vanY / 400) * 100;
+
+    vanEl.style.left   = pctX + '%';
+    vanEl.style.top    = pctY + '%';
+    if (pulseEl) { pulseEl.style.left = pctX + '%'; pulseEl.style.top = pctY + '%'; }
+
+    // Update coords display
+    const lat  = (51.3 + (vanY / 400) * 2.5).toFixed(4);
+    const lon  = (-2.5 + (vanX / 500) * 3).toFixed(4);
+    const coordEl = document.getElementById('vanCoords');
+    if (coordEl) coordEl.textContent = `${lat}°N, ${lon}°E`;
+
+    // Random direction
+    const dirEl = document.getElementById('vanDirection');
+    if (dirEl) dirEl.textContent = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
+  }
+
+  function updateETA() {
+    const etaEl     = document.getElementById('etaMinutes');
+    const etaSubEl  = document.getElementById('etaSub');
+    const barEl     = document.getElementById('arrivalBar');
+    const speedEl   = document.getElementById('vanSpeed');
+
+    // ETA fluctuates. Sometimes improves slightly. Often worsens.
+    // It never reaches 0. This is the joke and also a metaphor.
+    const fluctuation = (Math.random() - 0.4) * 3;
+    eta = Math.max(3, Math.round(eta + fluctuation));
+
+    // Progress bar inches forward but never completes
+    const progressDelta = (Math.random() - 0.3) * 2;
+    progress = Math.min(89, Math.max(2, progress + progressDelta));
+
+    if (etaEl) etaEl.textContent = eta;
+    if (barEl) barEl.style.width = progress + '%';
+
+    // Speed varies realistically
+    const speed = stalled ? 0 : Math.floor(Math.random() * 35) + 5;
+    if (speedEl) speedEl.textContent = speed + ' mph';
+
+    const subs = [
+      'Van en route. Please stand by.',
+      'ETA subject to operational adjustments.',
+      `Current ETA: ${eta} minutes (provisional — subject to revision)`,
+      'Van making steady progress. Mostly.',
+      'Driver confirms route is "mostly sorted."',
+      `Progress ${Math.round(progress)}% toward your location.`,
+      'Arrival estimated but not guaranteed.',
+      'HOOCER thanks you for your patience. You have no choice but to be patient.',
+    ];
+    if (etaSubEl) etaSubEl.textContent = subs[Math.floor(Math.random() * subs.length)];
+  }
+
+  function triggerStall(reason) {
+    stalled = true;
+    stallReason = reason;
+    eta += 4 + Math.floor(Math.random() * 8);
+    addLogEntry(reason, 'warning');
+    setTimeout(() => {
+      stalled = false;
+      addLogEntry('Delay resolved. Van resuming. ETA recalculated upward.', 'normal');
+    }, 12000 + Math.random() * 15000);
+  }
+
+  function vanUpdateCycle() {
+    // Random status event
+    if (Math.random() < 0.3) {
+      const event = STATUS_EVENTS[Math.floor(Math.random() * STATUS_EVENTS.length)];
+      addLogEntry(event.text, event.type);
+    }
+
+    // Random stall event (15% chance per cycle)
+    if (!stalled && Math.random() < 0.15) {
+      const stallReasons = [
+        'Driver stopped for lunch (mandatory rest period per employment law, not code 418)',
+        'Van engine warning light activated — not Code 418 equipment, just the engine',
+        'GPS rerouting through "Regulatory Avenue" — 8-minute delay',
+        'Traffic jam. Cause unknown. Duration unknown. Disposition: unknown.',
+        'Driver took wrong turn. Investigating return route.',
+      ];
+      triggerStall(stallReasons[Math.floor(Math.random() * stallReasons.length)]);
+    }
+
+    // Fuel slowly decreases
+    const fuelEl = document.getElementById('vanFuel');
+    if (fuelEl) {
+      const currentFuel = parseInt(fuelEl.textContent);
+      if (currentFuel > 8) {
+        fuelEl.textContent = (currentFuel - (Math.random() < 0.2 ? 1 : 0)) + '%';
+        if (currentFuel < 20 && Math.random() < 0.3) {
+          addLogEntry('Fuel low. Driver locating nearest fuel station. ETA impacted.', 'warning');
+          eta += 5;
+        }
+      }
+    }
+
+    moveVan();
+    updateETA();
+  }
+
+  // Initial log entries
+  addLogEntry('VAN-7 dispatched from HOOCER HQ (Milton Keynes). Code 418 enforcement active.', 'normal');
+  addLogEntry('Driver: ' + DRIVERS[0] + '. Blink detection equipment: OPERATIONAL.', 'normal');
+  addLogEntry('Route calculated. Estimated arrival: ' + eta + ' minutes (provisional).', 'normal');
+
+  // Seed some early events
+  setTimeout(() => addLogEntry('Navigating M1 junction. Slight delay.', 'warning'), 3000);
+  setTimeout(() => addLogEntry('Driver notes "unusual blink frequency" in adjacent car. NOI-7B prepared.', 'normal'), 7000);
+
+  // Main update cycle
+  setInterval(vanUpdateCycle, 4000 + Math.random() * 2000);
+
+  // Driver occasionally changes (shift handover)
+  setInterval(() => {
+    if (Math.random() < 0.08) {
+      const newDriver = DRIVERS[Math.floor(Math.random() * DRIVERS.length)];
+      document.getElementById('vanDriver').textContent = newDriver;
+      addLogEntry(`Shift handover. New driver: ${newDriver}. Briefed on Code 418 situation.`, 'normal');
+    }
+  }, 30000);
+  </script>
+</body>
+</html>

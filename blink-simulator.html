@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <title>Blink Training Simulator — HOOCER</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="compliance-score.js" defer></script>
+  <style>
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: var(--gov-light-grey); display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* phases */
+    .phase { display: none; flex-direction: column; flex: 1; }
+    .phase.active { display: flex; }
+
+    /* INTRO */
+    #phase-intro { padding: 24px 20px; max-width: 680px; margin: 0 auto; width: 100%; }
+    #phase-intro h2 { font-size: 1.5rem; margin-bottom: 14px; border-bottom: 3px solid var(--gov-black); padding-bottom: 10px; }
+
+    /* ARENA */
+    #phase-arena { background: #0b0c0c; color: #fff; align-items: center; justify-content: flex-start; position: relative; }
+
+    .sim-instruction {
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0.65;
+      margin-bottom: 20px;
+    }
+
+    .eye-outer-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 20px;
+    }
+
+    /* The eye SVG animation. The eyelid drops when accused. */
+    .eye-svg { width: 220px; height: 110px; }
+    .eye-lid-top { transition: d 0.2s ease; }
+
+    .countdown-ring {
+      width: 120px;
+      height: 120px;
+      position: relative;
+      margin: 20px auto 0;
+    }
+
+    .countdown-ring svg { transform: rotate(-90deg); }
+    .countdown-ring-circle {
+      fill: none;
+      stroke: var(--gov-green);
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-dasharray: 326;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.9s linear, stroke 0.3s;
+    }
+
+    .countdown-number {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2.2rem;
+      font-family: "Courier New", monospace;
+      font-weight: bold;
+      color: var(--gov-green);
+    }
+
+    /* The accusation banner — appears over the arena */
+    .accusation-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      background: var(--gov-red);
+      color: #fff;
+      padding: 18px 24px;
+      font-size: 1.05rem;
+      font-weight: bold;
+      text-align: center;
+      line-height: 1.6;
+      z-index: 20;
+      animation: accu-slide 0.25s ease forwards;
+    }
+
+    @keyframes accu-slide {
+      from { transform: translateY(-100%); opacity: 0; }
+      to   { transform: translateY(0);     opacity: 1; }
+    }
+
+    .accusation-counter-line {
+      font-size: 11px;
+      opacity: 0.65;
+      letter-spacing: 1px;
+      margin-top: 6px;
+      font-weight: normal;
+    }
+
+    .sim-blink-count-display {
+      position: absolute;
+      top: 14px;
+      right: 20px;
+      text-align: right;
+      font-family: "Courier New", monospace;
+      font-size: 12px;
+      opacity: 0.5;
+    }
+
+    .phase-label {
+      position: absolute;
+      top: 14px;
+      left: 20px;
+      font-size: 10px;
+      letter-spacing: 3px;
+      opacity: 0.35;
+    }
+
+    /* bottom HUD */
+    .sim-hud {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      flex-wrap: wrap;
+      padding: 12px 20px;
+      gap: 20px;
+      font-size: 12px;
+      font-family: "Courier New", monospace;
+      color: rgba(255,255,255,0.45);
+      margin-top: auto;
+    }
+
+    .hud-item strong { color: rgba(255,255,255,0.8); }
+
+    /* RESULTS */
+    #phase-results { padding: 24px 20px; max-width: 680px; margin: 0 auto; width: 100%; }
+  </style>
+</head>
+<body class="page-body">
+
+  <header class="page-header">
+    <span style="font-size:20px;">♛</span>
+    <span>HOOCER — Mandatory Blink Training Simulator</span>
+    <span style="margin-left:auto;font-size:11px;opacity:0.5;font-family:monospace;">Module BT-7 (Rev. 4) — Code 418 Compliance Programme</span>
+  </header>
+
+  <nav class="site-nav" aria-label="HOOCER service navigation">
+    <a href="index.html">⊙ Home</a>
+    <a href="blink-simulator.html" class="active-nav-item" style="background:var(--gov-yellow);color:var(--gov-black);">Blink Training</a>
+    <a href="surveillance-map.html">National Map</a>
+    <a href="van-tracker.html">Van Tracker</a>
+    <a href="chatbot.html">Appeal Bot</a>
+    <a href="tribunal-audio.html">Tribunal Logs</a>
+    <a href="form-EYE-9.html">Form EYE-9</a>
+    <a href="intranet.html">Intranet ⚠</a>
+    <a href="gaslight.html">Compliance Check</a>
+  </nav>
+
+  <!-- ======================== PHASE 1: INTRO ======================== -->
+  <div id="phase-intro" class="phase active">
+    <h2>Mandatory Blink Training — Module BT-7</h2>
+
+    <div style="background:var(--gov-yellow);color:var(--gov-black);padding:14px 16px;margin-bottom:18px;border-left:5px solid #c9a800;font-size:14px;line-height:1.7;">
+      <strong>⚖ LEGAL NOTICE — CODE 418(b) COMPLIANCE REQUIREMENT</strong><br>
+      You are required to complete this training module as a condition of your Ocular Compliance
+      record. Completion does not guarantee your fine will be reduced. Non-completion will result
+      in a further fine. Attempting to complete the training while blinking is a separate offence
+      under Code 418(d): <em>Ironic Non-Compliance During Compliance Training</em>.
+    </div>
+
+    <div style="background:#fff;border:1px solid #ccc;padding:18px;margin-bottom:18px;font-size:14px;line-height:1.8;">
+      <strong>ABOUT THIS MODULE</strong><br><br>
+      Blink Training Simulator Module BT-7 is the standard HOOCER ocular suppression programme,
+      mandated for citizens who have received one or more Notices of Ocular Infringement under
+      Ocular Compliance Code 418.<br><br>
+      The simulation will present you with a period during which you must keep your eyes open.
+      HOOCER's automated Blink Detection Engine (BDE v3.7) will monitor your eyelid activity
+      throughout. If a blink is detected, it will be noted.<br><br>
+      <em>The training consists of three phases:</em>
+      <ol style="padding-left:20px;margin-top:10px;">
+        <li><strong>Phase 1: Calibration</strong> — BDE establishes your baseline blink frequency</li>
+        <li><strong>Phase 2: Suppression Training</strong> — You attempt not to blink for 60 seconds</li>
+        <li><strong>Phase 3: Assessment</strong> — Your performance is evaluated and a grade is assigned</li>
+      </ol>
+    </div>
+
+    <div style="background:#f3f2f1;border-left:4px solid var(--gov-dark-grey);padding:12px 14px;font-size:13px;margin-bottom:20px;line-height:1.7;">
+      <strong>IMPORTANT:</strong> No citizen has ever passed this module. This is not a design flaw.
+      The training module is intended to be completed, not passed. Completion generates a record
+      of your attempt. The record will be reviewed during your annual ocular assessment.
+      Do not bring snacks to the assessment.
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <button class="btn-primary" onclick="startSimulator()" style="font-size:16px;padding:14px 32px;">
+        BEGIN TRAINING
+      </button>
+      <a href="index.html" style="display:inline-flex;align-items:center;padding:14px 20px;background:var(--gov-mid-grey);color:#fff;text-decoration:none;font-weight:bold;font-size:14px;">
+        Return to Portal
+      </a>
+    </div>
+
+    <p style="font-size:11px;color:var(--gov-dark-grey);margin-top:14px;font-style:italic;">
+      By beginning this training you confirm you have read the above, accept Code 418 terms,
+      and acknowledge that HOOCER does not guarantee comfortable seating during the assessment.
+    </p>
+  </div>
+
+  <!-- ======================== PHASE 2: ARENA ======================== -->
+  <div id="phase-arena" class="phase">
+
+    <div class="phase-label">PHASE <span id="arenaPhaseLabel">1</span> / 2 — <span id="arenaPhaseName">CALIBRATION</span></div>
+    <div class="sim-blink-count-display">
+      BLINKS: <strong id="arenaBlinkCount">0</strong><br>
+      CODE 418 STATUS: <span id="arena418">PENDING</span>
+    </div>
+
+    <!-- accusation overlay — shown/hidden by JS -->
+    <div class="accusation-overlay" id="accusationOverlay" style="display:none;">
+      <div id="accusationText">BLINK DETECTED</div>
+      <div class="accusation-counter-line" id="accusationCodeLine">Ocular Compliance Code 418(b) — Infringement logged</div>
+    </div>
+
+    <div class="eye-outer-wrapper" style="flex:1;width:100%;align-items:center;justify-content:center;">
+      <div class="sim-instruction" id="simInstruction">KEEP YOUR EYES OPEN</div>
+
+      <!-- THE EYE. it judges you. -->
+      <svg class="eye-svg" viewBox="0 0 220 110" xmlns="http://www.w3.org/2000/svg" id="eyeSvg" aria-hidden="true">
+        <!-- eye white -->
+        <path d="M 10 55 Q 110 -20 210 55 Q 110 130 10 55 Z" fill="#e8e8e8" id="eyeWhite"/>
+        <!-- iris -->
+        <circle cx="110" cy="55" r="32" fill="#2d5fa6" id="eyeIris"/>
+        <!-- pupil -->
+        <circle cx="110" cy="55" r="18" fill="#0a0a0a" id="eyePupil"/>
+        <!-- iris shimmer -->
+        <circle cx="99" cy="46" r="6" fill="rgba(255,255,255,0.18)" id="eyeShimmer"/>
+        <!-- eyelid top — covers the eye when accused -->
+        <path d="M 10 55 Q 110 -20 210 55" fill="#0b0c0c" id="eyeLidTop" style="opacity:0;transition:opacity 0.15s;"/>
+        <!-- eyelid bottom -->
+        <path d="M 10 55 Q 110 130 210 55" fill="#0b0c0c" id="eyeLidBottom" style="opacity:0;transition:opacity 0.15s;"/>
+        <!-- eyelash lines (decorative, took me 20 minutes, nobody will notice) -->
+        <g stroke="#0b0c0c" stroke-width="1.5" opacity="0.4">
+          <line x1="55"  y1="22" x2="52"  y2="14"/>
+          <line x1="80"  y1="13" x2="79"  y2="5"/>
+          <line x1="110" y1="10" x2="110" y2="2"/>
+          <line x1="140" y1="13" x2="141" y2="5"/>
+          <line x1="165" y1="22" x2="168" y2="14"/>
+        </g>
+      </svg>
+
+      <!-- countdown ring -->
+      <div class="countdown-ring">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
+          <circle cx="60" cy="60" r="52" class="countdown-ring-circle" id="countdownCircle"/>
+        </svg>
+        <div class="countdown-number" id="countdownNumber">--</div>
+      </div>
+    </div>
+
+    <div class="sim-hud">
+      <div class="hud-item">DURATION: <strong id="hudDuration">--</strong></div>
+      <div class="hud-item">BLINK RATE: <strong id="hudRate">-- /min</strong></div>
+      <div class="hud-item">PHASE: <strong id="hudPhase">CALIBRATING</strong></div>
+      <div class="hud-item">THREAT LEVEL: <strong id="hudThreat" style="color:var(--gov-green);">NOMINAL</strong></div>
+      <div class="hud-item" style="margin-left:auto;">CODE 418 INFRINGEMENTS THIS SESSION: <strong id="hudInfringements">0</strong></div>
+    </div>
+  </div>
+
+  <!-- ======================== PHASE 3: RESULTS ======================== -->
+  <div id="phase-results" class="phase">
+    <h2>Training Module BT-7 — Assessment Results</h2>
+
+    <div id="resultsGrade" style="text-align:center;padding:28px;margin-bottom:20px;font-size:1.5rem;font-weight:bold;letter-spacing:2px;"></div>
+
+    <div style="background:#fff;border:1px solid #ccc;padding:18px;margin-bottom:18px;font-size:13px;line-height:1.8;" id="resultsSummary"></div>
+
+    <div style="background:#fff8e1;border-left:4px solid var(--warning-orange);padding:12px 14px;font-size:13px;margin-bottom:20px;" id="resultsAdvice"></div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <button class="btn-primary" onclick="restartSimulator()">TRY AGAIN (INADVISABLE)</button>
+      <a href="index.html" style="display:inline-flex;align-items:center;padding:12px 20px;background:var(--gov-mid-grey);color:#fff;text-decoration:none;font-weight:bold;font-size:14px;">Return to Portal</a>
+      <a href="form-EYE-9.html" style="display:inline-flex;align-items:center;padding:12px 20px;background:var(--gov-red);color:#fff;text-decoration:none;font-weight:bold;font-size:14px;">Renounce Blinking (Form EYE-9)</a>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-top">♛ HOOCER — Blink Training Division</div>
+    <div>&copy; Crown Copyright 2026 &nbsp;|&nbsp; Ocular Compliance Code 418 applies &nbsp;|&nbsp; <a href="LEGISLATION.md">Legislation</a></div>
+    <div class="footer-disclaimer">This training module does not reduce fines. Nothing reduces fines.</div>
+  </footer>
+
+  <script>
+  // ---------------------------------------------------------------
+  // BLINK TRAINING SIMULATOR — script.js (inline, because it's
+  // tightly coupled to this page and I'm not building a module system
+  // for a joke website)
+  //
+  // The core mechanic:
+  //   - Phase 1 (calibration, 15s): frequent accusations to "calibrate"
+  //   - Phase 2 (suppression, 60s): less frequent but still inevitable
+  //   - The accusations are accusatory, bureaucratic, and dryly funny
+  //   - There is no way to pass. Passing was never the point.
+  // ---------------------------------------------------------------
+
+  'use strict';
+
+  // 34 accusation messages. each more weary than the last.
+  // I've numbered them because I'm a professional.
+  const ACCUSATIONS = [
+    { text: "BLINK DETECTED.", sub: "Code 418(b) — eyelid closure event confirmed. Noted on file." },
+    { text: "WE SAW THAT.", sub: "Ocular Compliance Code 418(b). You cannot hide from the algorithm." },
+    { text: "THAT WAS A BLINK.", sub: "You know it was. We know it was. Let's not make this difficult." },
+    { text: "EYELID DEVIATION DETECTED.", sub: "Per Code 418(b): voluntary or involuntary — both count. This counted." },
+    { text: "BLINK CONFIRMED.", sub: "The Blink Detection Engine does not speculate. It records. It just recorded." },
+    { text: "YOUR EYES CLOSED.", sub: "Briefly. But 'briefly' is not a legal category under Code 418." },
+    { text: "INFRINGEMENT LOGGED.", sub: "This will appear in your annual Ocular Compliance Assessment. We are sorry to inform you." },
+    { text: "PLEASE DO NOT BLINK DURING TRAINING.", sub: "...is what we are required to say. You blinked. Code 418(d): Ironic Non-Compliance." },
+    { text: "CODE 418(b) — EYELID CLOSURE EVENT.", sub: "There is nothing we can do about this. It's already on your file." },
+    { text: "YOU BLINKED.", sub: "We don't enjoy saying it. We do enjoy noting it. Ocular Code 418 infringement added." },
+    { text: "OUR RECORDS INDICATE A BLINK.", sub: "Your records, we presume, indicate otherwise. Our records take precedence." },
+    { text: "BLINK. CODE 418.", sub: "The algorithm observed eyelid deviation lasting 0.2–0.4 seconds. Characteristic blink signature." },
+    { text: "WE OBSERVED EYELID DEVIATION.", sub: "Do not dispute this. Per Schedule 7(b), disputing a confirmed blink is a separate infringement." },
+    { text: "THAT WAS A CLASSIC MID-TRAINING BLINK.", sub: "The Blink Inspector (Grade 7) has reviewed and concurs. Grade 7s are very thorough." },
+    { text: "YOU MAY FEEL YOU DIDN'T BLINK.", sub: "The algorithm felt differently. The algorithm prevails. Code 418 applies." },
+    { text: "BLINK DETECTED — CATEGORY 2.", sub: "Unprompted, mid-session. This is the most common category. You are very normal." },
+    { text: "WE ARE NOT JUDGING YOU.", sub: "We are, however, logging you. Ocular Compliance Code 418(b) has been applied." },
+    { text: "ANOTHER ONE.", sub: "We are not surprised. We are, however, diligent. Code 418 infringement count updated." },
+    { text: "THAT WAS SUSPICIOUS.", sub: "In the context of this training, 'suspicious' means 'a blink.' Code 418(d) applied." },
+    { text: "PER THE ACT: THAT'S A BLINK.", sub: "Section 2, definition (a): 'involuntary or voluntary closure.' You closed. Section 2 applies." },
+    { text: "OUR ATMOSPHERIC MODEL FOUND NO DUST.", sub: "You cannot claim the dust exemption. We checked. There was no dust. That was a blink." },
+    { text: "CODE 418(c): BLINK DURING ANTI-BLINK TRAINING.", sub: "This is a specialist subcategory. You have unlocked it. Congratulations." },
+    { text: "YOU BLINKED AGAIN.", sub: "We're not angry. We're filing an infringement. Those are different feelings. Code 418(b)." },
+    { text: "EYELID CLOSURE — DURATION: STANDARD.", sub: "0.15–0.4 seconds. Textbook blink. Grade 7 would be proud. Grade 7 is writing it up." },
+    { text: "WE SIMPLY OBSERVED WHAT HAPPENED.", sub: "What happened was a blink. We observed it. It is on the record. Code 418(b)." },
+    { text: "THAT ONE WAS PARTICULARLY SUSPICIOUS.", sub: "We're not saying why. Just that it was. The Tribunal has been notified." },
+    { text: "YOUR EYES CLOSED. OUR EYES DID NOT.", sub: "This is the fundamental asymmetry of the citizen-regulator relationship. Code 418." },
+    { text: "BLINK DETECTED DURING BLINKING PROHIBITION PERIOD.", sub: "The prohibition period is the entire training session. You are not complying. Code 418(d)." },
+    { text: "THE EYELID TRIBUNAL HAS BEEN NOTIFIED.", sub: "They will review this in 14–18 months. In the meantime: Code 418(b) on file." },
+    { text: "WE UNDERSTAND YOU'RE TRYING VERY HARD.", sub: "You're also blinking very much. These two facts coexist. Code 418(b) applied." },
+    { text: "NO, YOU DIDN'T BLINK EARLIER.", sub: "You blinked now. That's different. The earlier blink was also a blink. Code 418(b) × 2." },
+    { text: "INVOLUNTARY REFLEX IS NOT A DEFENCE.", sub: "Per Section 2(b) of the Act: 'voluntary or involuntary closure.' Both. Both count." },
+    { text: "CODE 418(b) — WE CANNOT STRESS THIS ENOUGH.", sub: "We have been stressing it. You have been blinking. One of us will have to change." },
+    { text: "PLEASE DO NOT LIE TO HOOCER.", sub: "We know you blinked. Claiming otherwise adds Code 418(c) to the existing 418(b)." },
+  ];
+
+  let state = {
+    phase: 'intro', // intro | calibration | suppression | results
+    blinkCount: 0,
+    sessionStart: null,
+    phaseStart: null,
+    countdown: 15,
+    accusationTimer: null,
+    countdownTimer: null,
+    isShowingAccusation: false,
+    totalDuration: 0,
+  };
+
+  function startSimulator() {
+    showPhase('phase-arena');
+    startCalibration();
+  }
+
+  function showPhase(id) {
+    ['phase-intro', 'phase-arena', 'phase-results'].forEach(p => {
+      const el = document.getElementById(p);
+      if (el) el.classList.remove('active');
+    });
+    const target = document.getElementById(id);
+    if (target) target.classList.add('active');
+  }
+
+  // ---- CALIBRATION PHASE (15 seconds, very frequent accusations) ----
+  function startCalibration() {
+    state.phase = 'calibration';
+    state.blinkCount = 0;
+    state.sessionStart = Date.now();
+    state.phaseStart = Date.now();
+    state.countdown = 15;
+
+    document.getElementById('arenaPhaseLabel').textContent = '1';
+    document.getElementById('arenaPhaseName').textContent  = 'CALIBRATION';
+    document.getElementById('hudPhase').textContent        = 'CALIBRATING';
+    document.getElementById('simInstruction').textContent  = 'CALIBRATING... KEEP YOUR EYES OPEN';
+
+    // Calibration: accuse every 2.5–4 seconds. It's supposed to feel inevitable.
+    scheduleNextAccusation(2500, 4000);
+    startCountdown(15, () => startSuppression());
+    updateHud();
+  }
+
+  // ---- SUPPRESSION PHASE (60 seconds, slightly less frequent but still constant) ----
+  function startSuppression() {
+    clearTimeout(state.accusationTimer);
+    state.phase = 'suppression';
+    state.phaseStart = Date.now();
+    state.countdown = 60;
+
+    document.getElementById('arenaPhaseLabel').textContent = '2';
+    document.getElementById('arenaPhaseName').textContent  = 'SUPPRESSION';
+    document.getElementById('hudPhase').textContent        = 'SUPPRESSION TRAINING';
+    document.getElementById('simInstruction').textContent  = 'DO NOT BLINK';
+
+    // Suppression: 3–5 second intervals. Still inevitable. Just feels more ominous.
+    scheduleNextAccusation(3000, 5000);
+    startCountdown(60, () => showResults());
+  }
+
+  function scheduleNextAccusation(minMs, maxMs) {
+    if (state.phase === 'results' || state.phase === 'intro') return;
+    const delay = minMs + Math.random() * (maxMs - minMs);
+    state.accusationTimer = setTimeout(() => {
+      triggerAccusation();
+      scheduleNextAccusation(minMs, maxMs);
+    }, delay);
+  }
+
+  function triggerAccusation() {
+    if (state.phase === 'results') return;
+
+    state.blinkCount++;
+    document.getElementById('arenaBlinkCount').textContent  = state.blinkCount;
+    document.getElementById('hudInfringements').textContent = state.blinkCount;
+
+    // update 418 status
+    const status418 = document.getElementById('arena418');
+    if (state.blinkCount > 10) {
+      status418.textContent = 'CRITICAL'; status418.style.color = '#d4351c';
+    } else if (state.blinkCount > 5) {
+      status418.textContent = 'ELEVATED'; status418.style.color = '#f47738';
+    } else {
+      status418.textContent = 'ACTIVE';   status418.style.color = '#00703c';
+    }
+
+    // threat level in HUD
+    const threat = document.getElementById('hudThreat');
+    if (state.blinkCount > 15) {
+      threat.textContent = 'EXTREME'; threat.style.color = '#d4351c';
+    } else if (state.blinkCount > 8) {
+      threat.textContent = 'HIGH'; threat.style.color = '#f47738';
+    } else if (state.blinkCount > 3) {
+      threat.textContent = 'ELEVATED'; threat.style.color = '#f47738';
+    }
+
+    // show the eyelid closing animation
+    document.getElementById('eyeLidTop').style.opacity    = '1';
+    document.getElementById('eyeLidBottom').style.opacity = '1';
+    document.getElementById('countdownCircle').style.stroke = '#d4351c';
+
+    // pick accusation
+    const acc = ACCUSATIONS[state.blinkCount % ACCUSATIONS.length];
+    document.getElementById('accusationText').textContent    = acc.text;
+    document.getElementById('accusationCodeLine').textContent = acc.sub;
+
+    const overlay = document.getElementById('accusationOverlay');
+    overlay.style.display = 'block';
+    // re-trigger animation
+    overlay.style.animation = 'none';
+    overlay.offsetHeight; // force reflow
+    overlay.style.animation = '';
+
+    // hide after 2.2 seconds
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      document.getElementById('eyeLidTop').style.opacity    = '0';
+      document.getElementById('eyeLidBottom').style.opacity = '0';
+      document.getElementById('countdownCircle').style.stroke = '#00703c';
+    }, 2200);
+  }
+
+  function startCountdown(seconds, callback) {
+    if (state.countdownTimer) clearInterval(state.countdownTimer);
+    const total = seconds;
+    let remaining = seconds;
+    const circle = document.getElementById('countdownCircle');
+    const numEl  = document.getElementById('countdownNumber');
+    const circumference = 326;
+
+    numEl.textContent = remaining;
+    circle.style.strokeDashoffset = '0';
+
+    state.countdownTimer = setInterval(() => {
+      remaining--;
+      numEl.textContent = remaining;
+      const offset = ((total - remaining) / total) * circumference;
+      circle.style.strokeDashoffset = offset;
+
+      if (remaining <= 0) {
+        clearInterval(state.countdownTimer);
+        callback();
+      }
+    }, 1000);
+  }
+
+  function updateHud() {
+    if (state.phase === 'results') return;
+    const elapsed = (Date.now() - (state.sessionStart || Date.now())) / 1000;
+    const duration = Math.floor(elapsed);
+    const rate = elapsed > 0 ? ((state.blinkCount / elapsed) * 60).toFixed(1) : '0.0';
+    document.getElementById('hudDuration').textContent = duration + 's';
+    document.getElementById('hudRate').textContent = rate + ' /min';
+    setTimeout(updateHud, 1000);
+  }
+
+  function showResults() {
+    clearTimeout(state.accusationTimer);
+    clearInterval(state.countdownTimer);
+    state.phase = 'results';
+    state.totalDuration = Math.round((Date.now() - state.sessionStart) / 1000);
+
+    showPhase('phase-results');
+
+    // Grade: always fail. The wording varies.
+    const gradeEl   = document.getElementById('resultsGrade');
+    const summaryEl = document.getElementById('resultsSummary');
+    const adviceEl  = document.getElementById('resultsAdvice');
+
+    // possible grades, from bad to worse to somehow worse still
+    const grades = [
+      { label: 'FAIL — MODULE NOT PASSED', color: '#d4351c', bg: '#fff5f5' },
+      { label: 'FAIL — PERSISTENT BLINK BEHAVIOUR', color: '#d4351c', bg: '#fff5f5' },
+      { label: 'FAIL — OCULAR NON-COMPLIANCE (AGGRAVATED)', color: '#d4351c', bg: '#fff0f0' },
+      { label: 'FAIL — IRONIC BLINK DURING ANTI-BLINK TRAINING', color: '#aa2b16', bg: '#ffe8e8' },
+    ];
+    const grade = grades[Math.min(Math.floor(state.blinkCount / 5), grades.length - 1)];
+
+    gradeEl.textContent = grade.label;
+    gradeEl.style.background = grade.bg;
+    gradeEl.style.color = grade.color;
+    gradeEl.style.border = `2px solid ${grade.color}`;
+
+    summaryEl.innerHTML = `
+      <strong>TRAINING SESSION SUMMARY — Code 418 Assessment Record</strong><br><br>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <tr><td style="padding:5px;border-bottom:1px solid #eee;">Total session duration:</td><td style="text-align:right;font-family:monospace;font-weight:bold;">${state.totalDuration}s</td></tr>
+        <tr><td style="padding:5px;border-bottom:1px solid #eee;">Blinks detected:</td><td style="text-align:right;font-family:monospace;font-weight:bold;color:#d4351c;">${state.blinkCount}</td></tr>
+        <tr><td style="padding:5px;border-bottom:1px solid #eee;">Blinks permitted during training:</td><td style="text-align:right;font-family:monospace;font-weight:bold;color:#00703c;">0</td></tr>
+        <tr><td style="padding:5px;border-bottom:1px solid #eee;">Excess blinks (Code 418 chargeable):</td><td style="text-align:right;font-family:monospace;font-weight:bold;color:#d4351c;">${state.blinkCount}</td></tr>
+        <tr><td style="padding:5px;">Module BT-7 status:</td><td style="text-align:right;font-family:monospace;font-weight:bold;color:#d4351c;">NOT PASSED</td></tr>
+      </table><br>
+      This result will be added to your Ocular Compliance file within 3–5 working days.
+      You may be asked to retake the module. Retaking the module will produce the same result.
+      This is documented in HOOCER Internal Guidance Note IGN-44: <em>Expected Module Outcomes</em>.
+    `;
+
+    const adviceOptions = [
+      'HOOCER recommends you attempt to blink less in general, and consider reducing this during training specifically.',
+      'Consider completing Form EYE-9 (Renunciation of Blinking) to reduce future liability. Warning: Form EYE-9 cannot be submitted.',
+      'A HOOCER Blink Reduction Consultation is available in Milton Keynes. Waiting time: 14–18 months.',
+      `With ${state.blinkCount} blinks in ${state.totalDuration} seconds, your rate was significantly above the training threshold of 0. HOOCER suggests you "try harder," a guidance note that Legal has reviewed and reluctantly approved.`,
+    ];
+    adviceEl.innerHTML = '<strong>NEXT STEPS:</strong> ' + adviceOptions[state.blinkCount % adviceOptions.length];
+  }
+
+  function restartSimulator() {
+    clearTimeout(state.accusationTimer);
+    clearInterval(state.countdownTimer);
+    state = {
+      phase: 'intro', blinkCount: 0, sessionStart: null, phaseStart: null,
+      countdown: 15, accusationTimer: null, countdownTimer: null, totalDuration: 0,
+    };
+    document.getElementById('arenaBlinkCount').textContent  = '0';
+    document.getElementById('hudInfringements').textContent = '0';
+    document.getElementById('arena418').textContent         = 'PENDING';
+    document.getElementById('accusationOverlay').style.display = 'none';
+    showPhase('phase-intro');
+  }
+  </script>
+</body>
+</html>

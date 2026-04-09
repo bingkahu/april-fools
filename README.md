@@ -2,86 +2,139 @@
 
 ## A DEV April Fools Challenge 2026 Entry
 
-### Or: "I Stayed Up Until 2am Building A Fake Government Website About Blinking And I Have No Regrets"
+### Or: "I Stayed Up Until 3am Building A Fake Government Agency That Regulates Blinking And I Have No Regrets Whatsoever"
 
 ---
 
-I was lying awake at 1:47am — as one does — thinking about how the UK government regulates genuinely
-extraordinary things. Pub opening hours. What you can name your boat. The exact shape of a banger.
-And I thought: *what if they regulated blinking?*
+I was lying awake at 1:47am — as one does — thinking about how the UK government regulates
+genuinely extraordinary things. Pub opening hours. What you can name your boat. The exact
+legal definition of a banger. And I thought: *what if they regulated blinking?*
 
-This is that thought, made real, made worse, deployed to the internet.
+Four days, several coffees, and one strongly worded memo about crisps later: here we are.
 
 ---
 
 ## What Is This
 
-**HOOCER** is a fully fake UK government portal for the fictional *HM Office for Ocular Compliance
-& Eyelid Regulation*, which monitors your blinking activity, issues you a fine when you exceed
-the "legal limit" of 25 blinks, processes your appeal through 14 government departments, and
-then denies it.
+**HOOCER** is a fully fake UK government agency — the *HM Office for Ocular Compliance &
+Eyelid Regulation* — with a complete citizen-facing portal, a staff intranet (accidentally
+public), an enforcement van, a tribunal, a chatbot that can't help you, and a form that
+cannot be submitted.
 
-The "blink detection" is completely made up and works like this:
-
-| Behaviour | Interpretation |
-|-----------|---------------|
-| Mouse is moving | You're tracking something with your eyes → preceded by a blink |
-| Mouse has stopped | You stopped looking → eyes closed → blink |
-| You switched tabs | You looked away. Classic. |
-| Time is passing | Time = blinking. This is science. |
-| You clicked something | Pre-click micro-blink (very real, very documented, I looked it up*) |
-| You clicked "I DID NOT BLINK" | Recorded as a blink. This is the best bit. |
-
-_* I did not look it up_
+The entire site operates under **Ocular Compliance Code 418**, a fictional enforcement code
+that happens to share its number with HTTP 418 (I'm a Teapot). This is entirely intentional.
+It is also the best creative decision I've ever made.
 
 ---
 
 ## Features
 
-- **Live blink counter** with a scanning line animation because I wanted it to feel ominous
-- **Fake biometric readings** (Lid Velocity in μm/s, Eye Moisture Index) that are completely random and refresh every update cycle
-- **Live National Blink Feed** — a scrolling terminal of fabricated citizen blink data in hacker green because why not
-- **Official fine notice** with a genuine watermark effect and a fine calculated by an elaborate formula that occasionally malfunctions and outputs something like £14,392.00 for two excess blinks
-- **Appeal form** (Form OCI-7) with seven grounds of appeal including "I philosophically dispute the existence of blinks as discrete events"
-- **Fake 14-department processing pipeline** that takes about 10 seconds and denies you at the end
-- **CSS rubber stamp** that says APPEAL DENIED at a slight angle. My proudest work.
-- **Konami code easter egg** that tells you your fine has NOT been reduced
-- **Comic Sans footer on hover** because I am a professional
+### Core Portal
+- **Live Blink Monitor** — counts your "blinks" using a scientifically questionable detection
+  algorithm (mouse activity, tab switching, the passage of time, and clicking "I Did Not Blink"
+  which Code 418(c) converts directly into a blink)
+- **Official Fine Notice** — a complete, watermarked, bureaucratic fine with a multiplier that
+  occasionally has a "Government IT incident" and outputs something like £14,392 for two excess blinks
+- **Form OCI-7 Appeal** — a full appeal form with 14-department fake processing and automated denial
+
+### Blink Training Simulator
+A two-phase training module where the Blink Detection Engine accuses you every 2–5 seconds
+with one of 34 different bureaucratic accusations, including:
+
+- *"Your eyes closed. Briefly. But 'briefly' is not a legal category under Code 418."*
+- *"Per the Act: that's a blink. Section 2, definition (a): voluntary or involuntary closure. You closed."*
+- *"No, you didn't blink earlier. You blinked now. That's different. The earlier blink was also a blink."*
+
+The training module has never been passed. This is documented in Internal Guidance Note IGN-44.
+
+### National Blink Surveillance Map
+A live SVG map of the UK with randomly-generated blink events appearing in real time, colour-coded
+by compliance level. London always has the worst numbers. They're stressed. It's London. Milton
+Keynes HQ is marked with a gold star. Always watching.
+
+### HOOCER Mobile Enforcement Van Tracker
+A GPS tracker for VAN-7, driven by D. Thompson (Grade 6). The van moves around the map, generates
+status logs ("stuck behind a tractor — not Code 418-related"), and never actually arrives.
+ETA fluctuates between 3 and 22 minutes. Occasionally the van gets lost near "some shops."
+
+### Blink Appeal Chatbot (AAAS)
+An automated appeal assistant that:
+- Sincerely and effortfully cannot help you
+- References Form OCI-7 regardless of your question
+- Loops back to the beginning after 6 exchanges
+- Contradicts itself between sessions
+- Occasionally accuses you of blinking during the conversation
+
+### Ocular Tribunal Audio Logs
+Four absurd tribunal hearings, rendered using the Web Audio API:
+- *Blinksworth v. HOOCER* — the salt and vinegar crisp incident
+- *Re: Petition of C. Ocular* — philosophical grounds (the gerund argument)
+- *Emergency Hearing: The Staring Contest Incident* — the Tribunal had not anticipated this
+- *H. Yelid — Van Encounter Appeal* — the van's signage was in 14pt Arial. Adequate.
+
+Each hearing has a scrolling transcript that syncs with the audio, partial redactions replaced
+with an ominous tone chosen by the IT team.
+
+### Form EYE-9: Renunciation of Blinking
+A statutory opt-out form that:
+- Requires a Justice of the Peace countersignature (unavailable)
+- Requires an Ocular Notary witness (register closed since 2021, zero notaries registered)
+- Requires a payment reference before submission and a submission reference before payment
+- Has two mandatory sections that directly contradict each other
+- Cannot be submitted. This is not a bug.
+- Cycling submission attempts produce increasingly unhinged error messages, culminating in
+  `FATAL-418: The server is a teapot and refuses to accept EYE-9 forms.`
+
+### Blink Compliance Self-Assessment (Gaslight Mode)
+Six questions about your own blinking. For every answer you give, HOOCER's records disagree.
+Every question. All six. 100% discrepancy rate. The discrepancies are always yours.
+A Self-Report Discrepancy Notice is issued at the end. The fine scales with how much you blinked.
+
+### HOOCER Staff Intranet (Accidentally Public)
+An internal staff portal, currently visible to the public due to IT ticket HOO-IT-2026-0774
+(Status: Open, Week 6). Contains:
+- Memos including a divisional note about crisps (classified OFFICIAL by mistake)
+- Active disciplinary notices (the IT person made the intranet public, the Tribunal Chair sent
+  the crisp memo, and a Grade 7 officer blinked 12,440 times in a monitored week)
+- Six broken staff tools including a BSM Calculator returning values up to 500x
+- Live Code 418 enforcement statistics
+- A tea fund that has been in deficit since March
+
+---
+
+## The Fake Legal Framework
+
+**Ocular Compliance Code 418** governs the entire site. Key provisions include:
+- **418(a)** — Basic blink infringement
+- **418(b)** — Wilful or reckless blinking
+- **418(c)** — Blink denial (clicking "I Did Not Blink" counts as admission)
+- **418(d)** — Ironic non-compliance during blink training
+- **418(e)** — Unacceptable appeal
+- **418(f)** — Record flagging
+- **418(g)** — Documented Ocular Discourse (chatbot conversations)
+- **418(k)** — Electronic Input Sequences as Legal Instruments (why the Konami Code doesn't work)
+
+Full fake legislation is in `LEGISLATION.md`, including Schedule 12 (Allium Proximity Defence)
+and the note that HOOCER employs zero Allium Inspectors and therefore the defence is
+impossible to invoke.
 
 ---
 
 ## Tech Stack
 
 ```
-HTML            ████████████████  100%  (one file. just the one.)
-CSS             ████████████████  100%  (GOV.UK aesthetic, partially broken)
-JavaScript      ████████████████  100%  (vanilla. I'm not installing anything for this.)
-Caffeinated beverages ███████░░░   68%  (ran out near the end)
-Regrets               ░░░░░░░░░░    0%
+HTML            ████████████████  100%  (9 pages, all in root)
+CSS             ████████████████  100%  (GOV.UK aesthetic, slightly broken)
+JavaScript      ████████████████  100%  (vanilla, no frameworks, no regrets)
+Web Audio API   ████████████░░░░   75%  (tribunal hearings. actual audio. from scratch.)
+SVG             ████████████░░░░   75%  (UK map, eye animation, tribunal waveforms)
+Instant coffee  ████████████░░░░   72%  (ran out near form-EYE-9)
+Sleep           ████░░░░░░░░░░░░   25%  (insufficient)
+Regrets         ░░░░░░░░░░░░░░░░    0%
 ```
 
-No frameworks. No build step. No `node_modules` folder taking up 847MB. No `.env` file hiding
-shameful API keys. No TypeScript (I considered it for about 4 seconds then remembered this is
-a website about blinking). Just HTML, CSS, and JavaScript, the holy trinity of making things
-that probably shouldn't exist.
-
----
-
-## Deployment
-
-Cloudflare Pages: (coming)
-
-The `_headers` file adds some fun response headers to every page including:
-
-```
-X-HOOCER-Monitoring: ACTIVE
-X-Blink-Threshold: 25
-X-Powered-By: Unspecified Government Framework v4.2
-X-Appeal-Status: Probably-Denied
-```
-
-These headers do nothing. They are purely for people who check the network tab.
-(Hello, network tab people. You're blinking right now.)
+No frameworks. No build step. No `node_modules`. No TypeScript. No Webpack. No Vite.
+No package.json. Just files in a folder, deployed to Cloudflare Pages, monitoring your blinks.
 
 ---
 
@@ -89,82 +142,99 @@ These headers do nothing. They are purely for people who check the network tab.
 
 ```
 /
-├── index.html       — the whole app. four screens. one file.
-├── style.css        — GOV.UK aesthetic, 0.15 degrees off from correct
-├── script.js        — fake blink detection engine (comments included)
-├── README.md        — you are here
-├── LEGISLATION.md   — the law that governs all of this (not real)
-├── manifest.json    — PWA manifest, mostly unnecessary, added for the vibes
-├── teapot.txt       — RFC 2324 compliance
-└── _headers         — Cloudflare Pages headers, mostly jokes
+├── index.html              — main portal: blink monitor, fine, appeal, denial
+├── style.css               — shared styles, GOV.UK aesthetic
+├── script.js               — blink detection engine, fine calculator, Konami code
+├── compliance-score.js     — floating live compliance widget (appears on every page)
+├── blink-simulator.html    — mandatory training module BT-7
+├── surveillance-map.html   — national blink surveillance map
+├── van-tracker.html        — VAN-7 GPS tracker (D. Thompson, Grade 6)
+├── chatbot.html            — automated appeal assistance (cannot help)
+├── tribunal-audio.html     — tribunal hearing audio logs
+├── form-EYE-9.html         — statutory renunciation of blinking (cannot be submitted)
+├── intranet.html           — staff intranet (accidentally public)
+├── gaslight.html           — ocular compliance self-assessment
+├── favicon.svg             — crown and eye, because of course
+├── manifest.json           — PWA manifest (someone installed this. I want to meet them.)
+├── _headers                — Cloudflare Pages headers (includes X-Blink-Threshold: 25)
+├── README.md               — you are here
+├── LEGISLATION.md          — the Act, in full, including the crisp clause
+└── teapot.txt              — RFC 2324 compliance
 ```
+
+---
+
+## Deployment
+
+Drop the folder onto Cloudflare Pages. Click deploy. No build step. It runs.
+
+Every page loads the shared `compliance-score.js` which injects a floating live compliance
+percentage in the bottom-right corner. The percentage is random. It drifts between 19%
+and 71%. It is never good. It never gets better. This is by design.
+
+Response headers include `X-HOOCER-Monitoring: ACTIVE` and `X-Blink-Threshold: 25` and
+`X-Appeal-Status: Probably-Denied`. These are functionally useless. I'm proud of them.
 
 ---
 
 ## FAQ
 
 **Is this a real government website?**
-No. HOOCER does not exist. The Ocular Regulation and Eyelid Governance Act 2019 is not
-real legislation. Please do not write to your MP about blink fines. I will feel responsible.
+No. HOOCER does not exist. Ocular Compliance Code 418 is not real. The Eyelid Tribunal
+does not sit. D. Thompson's van is not outside your house. Please blink normally.
 
-**Why does clicking "I Did Not Blink" record a blink?**
-Because the act of denying a blink requires your eyes to be open, which implies they
-were previously closed. The defendant cannot both deny the blink and provide evidence
-of open eyes. This is the doctrine of Ocular Mens Rea (R v. Blinksworth, 2021, also made up).
+**The fine is £48,291.00 for two excess blinks.**
+The Blink Severity Multiplier has a 3% chance of experiencing what the code comments
+describe as a "Government IT incident." The fine stands. An investigation is ongoing.
 
-**The fine is £48,291.00 and I only did two extra blinks.**
-The Blink Severity Multiplier calculation has a 3% chance of experiencing what I've
-documented in the code as a "Government IT incident." The fine stands. The Tribunal
-has been notified. There is an investigation. It will take several years.
+**The Form EYE-9 countdown reaches zero and then nothing happens.**
+Correct. The form cannot be submitted. This is documented. The documentation is correct.
 
-**I entered the Konami code and nothing good happened.**
-Something happened. It just didn't reduce your fine. That was always going to be the
-outcome. I'm glad you tried.
+**Why does the intranet say it's publicly accessible by accident?**
+Because it's funnier that way. IT ticket HOO-IT-2026-0774 is open. Status: open.
 
-**The "Pay Fine" button doesn't work.**
-Neither does the real government payment portal, if my previous experiences are
-anything to go by. This is a faithful simulation.
+**The chatbot has given me contradictory information.**
+This is consistent with its design specification. It does not have a specification.
+The contradiction is the specification.
 
-**This made me anxious.**
-That's working as intended. The government wants you slightly anxious.
-That's just governance.
+**I tried the Konami code.**
+It didn't help. Code 418(k) is very clear on this. The attempt was noted on your file.
 
-**The live blink feed shows my name.**
-It doesn't. All names are made up. If you see "Margaret H." that is a coincidence
-and not your fault.
+**What happened in The Dorset Situation?**
+We cannot discuss this. Hover over the redacted text on the intranet to find out.
 
----
-
-## Known Issues
-
-- The fine sometimes computes to something with three decimal places (e.g. £14.003). Not
-  legal tender. The tribunal has been informed. They said "that's on the developer."
-- On mobile, the bureaucratic aesthetic suffers slightly. I considered fixing this and
-  then decided government websites look a bit broken on mobile anyway, so this is authentic.
-- The commitment slider on the appeal form goes up to 10 (Will Never Blink Again) which the
-  code comments say should prompt the user to seek medical attention. The code does not
-  actually do this. It's just a comment. I ran out of time.
+**Are the crisps actually mild?**
+We have reviewed the available evidence and we are not taking a position on the crisps.
+This matter is closed. The Tribunal Chair has requested we not reopen it.
 
 ---
 
 ## Author Note
 
-This took me one evening, one morning, and several laps of my flat muttering
-"what if the blink limit was 25" to myself.
+This took four evenings, one very late morning, and one accidental 2am when I thought
+"I'll just add the chatbot" and looked up an hour later having also written a fake tribunal
+audio system using the Web Audio API.
 
-My partner asked what I was doing. I said "a government website about blinking."
-She looked at me for a long time and then left the room.
+The fake muffled voices in the tribunal hearings are AM-modulated sawtooth oscillators.
+Different characters have different fundamental frequencies. Margaret (Tribunal Chair)
+is 200Hz. The appellant is 350Hz. The Redaction Tone is 440Hz descending, square wave.
+I am aware this is an extraordinary amount of effort for a joke.
 
-If this wins anything, I will frame the notification and put it next to my GCSE
-Art certificate (a C — but I'm proud of that ceramic mug and I stand by it).
+My partner asked what I was building. I said "a fake government website with a tribunal
+that generates synthesised audio of hearings about crisps." She looked at me for a long time.
 
-If this wins nothing, I will add a second agency: the **Authority for Sneeze Regulation (TASR)**.
-Consider this your warning.
+She now also knows what Code 418 is.
+
+If this wins anything, I will frame it next to the GCSE Art certificate (C, proud of that mug).
+
+If this wins nothing, I'm building the **Authority for Sneeze Regulation (TASR)** next.
+The TASR operates under Nasal Compliance Code 451.
 
 ---
 
 *Built for the DEV April Fools Challenge 2026*
 
-*HOOCER is not real. Blinking is not regulated. The Konami code will not help you.*
+*HOOCER is not real. Blinking is not regulated. The van will not arrive.*
+*The crisps were not mild. (This position is not endorsed by the author.)*
 
 *Please blink normally.*

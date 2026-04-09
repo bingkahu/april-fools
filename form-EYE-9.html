@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <title>Form EYE-9: Renunciation of Blinking — HOOCER</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="compliance-score.js" defer></script>
+  <style>
+    body { margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--gov-light-grey); display:flex; flex-direction:column; min-height:100vh; }
+
+    .form-wrapper { max-width:760px; margin:0 auto; width:100%; padding:24px 20px; flex:1; }
+
+    .form-title-block {
+      background:var(--gov-black);
+      color:#fff;
+      padding:18px 22px;
+      margin-bottom:0;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:16px;
+    }
+
+    .form-title-block h1 { font-size:1.2rem; margin:0; }
+    .form-title-block .form-num { font-size:2rem; font-family:"Courier New",monospace; font-weight:bold; color:var(--gov-yellow); flex-shrink:0; }
+
+    .form-legal-header {
+      background:#fffef0;
+      border:2px solid var(--gov-black);
+      border-top:none;
+      padding:14px 20px;
+      font-size:12px;
+      line-height:1.75;
+      margin-bottom:20px;
+    }
+
+    /* conflict detector bar — appears when two fields contradict each other.
+       took 40 minutes to get right. will not explain further. */
+    .conflict-bar {
+      background:var(--gov-red);
+      color:#fff;
+      padding:10px 16px;
+      font-size:13px;
+      font-weight:bold;
+      display:none;
+      animation:slide-in 0.25s ease;
+      margin-bottom:8px;
+    }
+    .conflict-bar.show { display:block; }
+    @keyframes slide-in { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+
+    /* section headers -->
+    .eye9-section { background:#fff; border:1px solid #ccc; margin-bottom:16px; }
+    .eye9-section-title {
+      background:var(--gov-black);
+      color:#fff;
+      padding:10px 16px;
+      font-size:13px;
+      font-weight:bold;
+      letter-spacing:1px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    .eye9-section-body { padding:16px 18px; }
+
+    .eye9-field { margin-bottom:18px; }
+    .eye9-field:last-child { margin-bottom:0; }
+    .eye9-label { display:block; font-weight:bold; font-size:14px; margin-bottom:6px; }
+    .eye9-note { display:block; font-size:12px; color:var(--gov-dark-grey); font-style:italic; margin-top:5px; line-height:1.5; }
+
+    .eye9-input, .eye9-select, .eye9-textarea {
+      width:100%;
+      padding:8px 10px;
+      border:2px solid var(--gov-black);
+      font-size:15px;
+      font-family:inherit;
+      background:#fff;
+      border-radius:0;
+    }
+    .eye9-input:focus, .eye9-select:focus, .eye9-textarea:focus {
+      outline:3px solid var(--gov-yellow);
+      outline-offset:0;
+    }
+    .eye9-textarea { resize:vertical; min-height:100px; font-size:14px; }
+
+    .eye9-radio-group, .eye9-checkbox-group {
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      background:var(--gov-light-grey);
+      border:1px solid #ccc;
+      padding:10px;
+    }
+    .eye9-radio-group label, .eye9-checkbox-group label {
+      display:flex; align-items:flex-start; gap:10px; cursor:pointer;
+      font-size:13px; line-height:1.5; padding:3px;
+    }
+    .eye9-radio-group input, .eye9-checkbox-group input { margin-top:3px; flex-shrink:0; }
+
+    /* the contradictory requirement pair styling */
+    .contra-pair { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    @media(max-width:560px){ .contra-pair { grid-template-columns:1fr; } }
+
+    .contra-item { background:#fff; border:1px solid #ccc; padding:12px; }
+    .contra-item .contra-label { font-size:11px; font-weight:bold; letter-spacing:1px; margin-bottom:6px; display:block; }
+
+    /* SUBMIT SECTION -->
+    .submit-section {
+      background:#fff;
+      border:2px solid var(--gov-black);
+      padding:20px;
+      margin-bottom:20px;
+    }
+
+    .submit-error-log {
+      font-family:"Courier New",monospace;
+      font-size:11px;
+      background:var(--gov-black);
+      color:#ff6b6b;
+      padding:12px;
+      max-height:200px;
+      overflow-y:auto;
+      display:none;
+      margin-top:12px;
+      scrollbar-width:thin;
+      scrollbar-color: #ff6b6b #111;
+    }
+    .submit-error-log.show { display:block; }
+
+    .error-line { padding:3px 0; border-bottom:1px solid rgba(255,107,107,0.2); }
+    .error-line.warning { color:#ffb347; }
+
+    /* Impossible countdown -->
+    .impossible-timer {
+      background:var(--gov-black);
+      color:var(--gov-red);
+      font-family:"Courier New",monospace;
+      font-size:2rem;
+      text-align:center;
+      padding:14px;
+      display:none;
+      letter-spacing:3px;
+    }
+    .impossible-timer.show { display:block; }
+  </style>
+</head>
+<body class="page-body">
+
+  <header class="page-header">
+    <span style="font-size:20px;">♛</span>
+    <span>HOOCER — Form EYE-9: Statutory Renunciation of the Right to Blink</span>
+    <span style="margin-left:auto;font-size:11px;opacity:0.5;font-family:monospace;">Code 418(a) Opt-Out Instrument</span>
+  </header>
+
+  <nav class="site-nav">
+    <a href="index.html">⊙ Home</a>
+    <a href="blink-simulator.html">Blink Training</a>
+    <a href="surveillance-map.html">National Map</a>
+    <a href="van-tracker.html">Van Tracker</a>
+    <a href="chatbot.html">Appeal Bot</a>
+    <a href="tribunal-audio.html">Tribunal Logs</a>
+    <a href="form-EYE-9.html" style="background:var(--gov-yellow);color:var(--gov-black);">Form EYE-9</a>
+    <a href="intranet.html">Intranet ⚠</a>
+    <a href="gaslight.html">Compliance Check</a>
+  </nav>
+
+  <div class="form-wrapper">
+
+    <div class="form-title-block">
+      <div>
+        <div style="font-size:11px;opacity:0.5;letter-spacing:2px;margin-bottom:4px;">HM OFFICE FOR OCULAR COMPLIANCE &amp; EYELID REGULATION</div>
+        <h1>STATUTORY RENUNCIATION OF THE RIGHT TO BLINK<br>Ocular Opt-Out Instrument — Code 418(a)</h1>
+        <div style="font-size:11px;opacity:0.5;margin-top:6px;">For official use only &nbsp;|&nbsp; This form cannot be submitted online &nbsp;|&nbsp; Or by post &nbsp;|&nbsp; Or in person</div>
+      </div>
+      <div class="form-num">EYE-9</div>
+    </div>
+
+    <div class="form-legal-header">
+      <strong>PLEASE READ BEFORE COMPLETING THIS FORM:</strong><br><br>
+      Form EYE-9 enables citizens to formally renounce their right to blink under the
+      <em>Ocular Regulation and Eyelid Governance Act 2019</em>, Schedule 18.
+      Successful completion exempts the applicant from Code 418 monitoring permanently.<br><br>
+      <strong>Requirements for a valid submission:</strong>
+      (a) The form must be completed in blue ink (this is a digital form, we are aware of the contradiction);
+      (b) All sections must be completed, including sections that contradict other sections;
+      (c) The form must be countersigned by a Justice of the Peace, witnessed by a HOOCER-registered Ocular Notary
+      (there are currently no registered Ocular Notaries — applications closed in 2021);
+      (d) A £35 non-refundable administrative fee must accompany the form — payment must be made before submission
+      but payment cannot be made without a valid submission reference, which is issued only after submission;<br><br>
+      <em>Note: This form has never been successfully submitted. This is not a design flaw.</em>
+    </div>
+
+    <!-- CONFLICT BAR — shows when contradictions are detected -->
+    <div class="conflict-bar" id="conflictBar">
+      ⚠ CONTRADICTION DETECTED — Sections <span id="conflictSections">--</span> contain conflicting declarations.
+      Both sections are mandatory. Both requirements are final.
+    </div>
+
+    <!-- SECTION 1 -->
+    <div class="eye9-section">
+      <div class="eye9-section-title">
+        <span>SECTION 1 — PERSONAL OCULAR DETAILS</span>
+        <span class="code-418-badge">CODE 418</span>
+      </div>
+      <div class="eye9-section-body">
+
+        <div class="eye9-field">
+          <label class="eye9-label" for="f-fullname">Full legal name (as registered with the National Blink Registry):</label>
+          <input type="text" class="eye9-input" id="f-fullname" placeholder="e.g. Mr A. Blinksworth" autocomplete="off" />
+          <span class="eye9-note">If your name contains the word "blink" in any language, you must complete supplementary Form EYE-9B before proceeding. EYE-9B does not exist yet.</span>
+        </div>
+
+        <div class="eye9-field">
+          <label class="eye9-label" for="f-nbrn">National Blink Registration Number:</label>
+          <input type="text" class="eye9-input" id="f-nbrn" placeholder="BLK-XXXX-XXXX" />
+          <span class="eye9-note">If you do not have an NBRN, you cannot submit this form. To obtain an NBRN, visit the National Blink Registry portal, which redirects to this form. We are aware of this. It is under review.</span>
+        </div>
+
+        <div class="contra-pair">
+          <div class="contra-item">
+            <span class="contra-label">LEFT EYE DETAILS:</span>
+            <div class="eye9-field" style="margin-bottom:8px;">
+              <label class="eye9-label" style="font-size:13px;" for="f-left-color">Left eye colour:</label>
+              <select class="eye9-select" id="f-left-color" onchange="checkConflicts()">
+                <option value="">--</option>
+                <option>Brown</option><option>Blue</option><option>Green</option><option>Hazel</option>
+                <option>Grey</option><option>Amber</option><option>Other (specify in Section 4)</option>
+              </select>
+            </div>
+            <div class="eye9-field" style="margin-bottom:0;">
+              <label class="eye9-label" style="font-size:13px;" for="f-left-dominant">Left eye is dominant eye?</label>
+              <select class="eye9-select" id="f-left-dominant" onchange="checkConflicts()">
+                <option value="">--</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+                <option value="unknown">Unknown (will require separate assessment)</option>
+              </select>
+            </div>
+          </div>
+          <div class="contra-item">
+            <span class="contra-label">RIGHT EYE DETAILS (FORM EYE-3 REQUIRED):</span>
+            <div style="background:#fff8e1;padding:10px;font-size:12px;line-height:1.6;">
+              Right eye details must be submitted on Form EYE-3 (Right Ocular Registration), which must
+              be submitted before Form EYE-9, except in cases where Form EYE-9 is submitted first, in which case
+              EYE-3 must be submitted within 14 days. Both forms must reference each other's submission number.
+              Neither form has a submission number until submitted. This is being looked into.
+            </div>
+          </div>
+        </div>
+
+        <div class="eye9-field" style="margin-top:14px;">
+          <label class="eye9-label" for="f-blink-freq">Current average blink frequency (blinks per minute, self-reported):</label>
+          <input type="number" class="eye9-input" id="f-blink-freq" min="0" max="200" placeholder="e.g. 16" oninput="checkConflicts()" />
+          <span class="eye9-note">Must be between 0 and 200. Must also be accurate. HOOCER reserves the right to dispute this figure. The Dispute Review Panel is backed up until 2028.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2 -->
+    <div class="eye9-section">
+      <div class="eye9-section-title"><span>SECTION 2 — RENUNCIATION DECLARATION</span></div>
+      <div class="eye9-section-body">
+
+        <div class="eye9-field">
+          <label class="eye9-label">Please select the scope of your renunciation:</label>
+          <div class="eye9-radio-group">
+            <label><input type="radio" name="scope" value="full" onchange="checkConflicts()" /> Full renunciation — I hereby renounce all future blinking, voluntary and involuntary</label>
+            <label><input type="radio" name="scope" value="voluntary" onchange="checkConflicts()" /> Voluntary blinking only — I will continue to blink involuntarily as required by basic human physiology</label>
+            <label><input type="radio" name="scope" value="monitored" onchange="checkConflicts()" /> Monitored renunciation — I renounce blinking during monitored sessions only, with standard blinking outside sessions</label>
+          </div>
+          <span class="eye9-note">Note: Option 2 (voluntary only) is not currently recognised under Code 418. Involuntary blinks are also chargeable. Note: Option 3 is also not recognised. Only Option 1 is valid. Note: Option 1 is medically inadvisable. HOOCER is not a medical authority and cannot be held liable for medical advice not given.</span>
+        </div>
+
+        <div class="impossible-requirement">
+          ⚠ <strong>MANDATORY REQUIREMENT:</strong> You must confirm you have NOT blinked since completing the top of this form.
+          If you have blinked, you must restart from Section 1. Restarting resets the form completion timer.
+          The form completion timer started when you opened this page. The timer is not displayed.
+        </div>
+
+        <div class="eye9-field" style="margin-top:14px;">
+          <label class="eye9-label" for="f-last-blink">Approximate time and date of your last blink:</label>
+          <input type="datetime-local" class="eye9-input" id="f-last-blink" oninput="checkConflicts()" />
+          <span class="eye9-note">This must be before you opened this form. It will also be after you opened this form, because you have been blinking throughout. This field is therefore impossible to complete correctly. Please do your best.</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION 3 -->
+    <div class="eye9-section">
+      <div class="eye9-section-title"><span>SECTION 3 — MANDATORY CONTRADICTORY REQUIREMENTS</span><span style="font-size:11px;opacity:0.55;">All subsections are mandatory</span></div>
+      <div class="eye9-section-body">
+
+        <div style="background:#fff3f3;border-left:4px solid var(--gov-red);padding:10px 14px;font-size:13px;margin-bottom:16px;">
+          This section was flagged during internal review as "logically inconsistent." The review was acknowledged.
+          The section was retained on the grounds that removing it would require updating the form reference in
+          seventeen other documents. The seventeen documents have not been updated since 2021.
+        </div>
+
+        <div class="contra-pair">
+          <div class="contra-item">
+            <span class="contra-label">SUBSECTION 3A — CONFIRM ALL BLINKS VOLUNTARY:</span>
+            <div class="eye9-field" style="margin-bottom:0;">
+              <div class="eye9-radio-group">
+                <label><input type="radio" name="blink-nature-3a" value="voluntary" onchange="checkConflicts()" /> I confirm all my blinks were voluntary</label>
+                <label><input type="radio" name="blink-nature-3a" value="involuntary" onchange="checkConflicts()" /> I confirm some blinks were involuntary</label>
+              </div>
+            </div>
+            <div class="conflict-warning" id="conflict-3a" style="display:none;">
+              ⚠ Conflicts with Section 3B requirement
+            </div>
+          </div>
+          <div class="contra-item">
+            <span class="contra-label">SUBSECTION 3B — CONFIRM ALL BLINKS INVOLUNTARY:</span>
+            <div class="eye9-field" style="margin-bottom:0;">
+              <div class="eye9-radio-group">
+                <label><input type="radio" name="blink-nature-3b" value="involuntary" onchange="checkConflicts()" /> I confirm all my blinks were involuntary</label>
+                <label><input type="radio" name="blink-nature-3b" value="voluntary" onchange="checkConflicts()" /> I confirm some blinks were voluntary</label>
+              </div>
+            </div>
+            <div class="conflict-warning" id="conflict-3b" style="display:none;">
+              ⚠ Conflicts with Section 3A requirement
+            </div>
+          </div>
+        </div>
+
+        <div class="eye9-field" style="margin-top:14px;">
+          <label class="eye9-label" for="f-jop">Justice of the Peace countersignature reference:</label>
+          <input type="text" class="eye9-input" id="f-jop" placeholder="JoP reference number (format: JP-XXXX-XXXX-YYYY)" />
+          <span class="eye9-note">The Justice of the Peace must countersign in person at a HOOCER office. HOOCER offices do not accept walk-ins. Appointments are not available. This requirement may be waived if the Justice of the Peace is unavailable, which they always are, but the waiver requires approval from the Justice of the Peace, which creates a logical problem we have documented.</span>
+        </div>
+
+        <div class="eye9-field">
+          <label class="eye9-label" for="f-notary">Ocular Notary witness reference:</label>
+          <input type="text" class="eye9-input" id="f-notary" placeholder="Ocular Notary ID (format: ON-XXXX)" />
+          <span class="eye9-note">There are currently zero registered HOOCER Ocular Notaries. The register was closed following a review in 2021. It is scheduled to reopen. The scheduled reopening has been rescheduled twice. The current projected reopening is 2028, subject to budget approval. Without a notary, this form cannot be submitted.</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION 4 -->
+    <div class="eye9-section">
+      <div class="eye9-section-title"><span>SECTION 4 — ONGOING COMPLIANCE COMMITMENT</span></div>
+      <div class="eye9-section-body">
+
+        <div class="eye9-field">
+          <label class="eye9-label">Following successful renunciation, I commit to: (all mandatory)</label>
+          <div class="eye9-checkbox-group" id="commitmentChecks">
+            <label><input type="checkbox" class="commitment-check" /> Not blinking voluntarily at any time, in any location, including during sleep (see Sleep Blinking (Separate Offence) Act 2020)</label>
+            <label><input type="checkbox" class="commitment-check" /> Reporting any involuntary blinks to HOOCER within 24 hours using Form BLK-2 (Involuntary Blink Self-Report)</label>
+            <label><input type="checkbox" class="commitment-check" /> Carrying my EYE-9 exemption card at all times (exemption cards are not yet available; estimated availability 2027)</label>
+            <label><input type="checkbox" class="commitment-check" /> Attending annual ocular compliance assessments in Milton Keynes (travel expenses not reimbursed)</label>
+            <label><input type="checkbox" class="commitment-check" /> Notifying HOOCER within 48 hours if I decide to resume blinking (resumption of blinking requires Form EYE-9R, which references this form)</label>
+            <label><input type="checkbox" class="commitment-check" /> Confirming that I understand the health implications of not blinking, acknowledging that HOOCER is not a medical authority, and agreeing not to hold HOOCER responsible for any corneal issues that may arise from this commitment</label>
+          </div>
+          <span class="eye9-note" id="checkboxNote">0 of 6 mandatory items checked.</span>
+        </div>
+
+        <div class="eye9-field">
+          <label class="eye9-label" for="f-medical">Medical sign-off reference (from a qualified ophthalmologist confirming you have read and understood the health risks):</label>
+          <input type="text" class="eye9-input" id="f-medical" placeholder="Ophthalmologist GMC number" />
+          <span class="eye9-note">HOOCER cannot provide medical advice. A qualified doctor must confirm you are aware of the health risks. HOOCER cannot confirm what those health risks are, as that would constitute medical advice.</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION 5 - STATUTORY DECLARATION -->
+    <div class="eye9-section">
+      <div class="eye9-section-title"><span>SECTION 5 — FINAL STATUTORY DECLARATION</span></div>
+      <div class="eye9-section-body">
+        <div class="eye9-field">
+          <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:13px;line-height:1.75;" for="f-declaration">
+            <input type="checkbox" id="f-declaration" style="margin-top:4px;flex-shrink:0;" onchange="checkConflicts()" />
+            I solemnly declare that I have completed this form accurately, that I renounce my right to blink in full,
+            that I have sourced a Justice of the Peace and Ocular Notary (both unavailable), that I understand the
+            form cannot currently be submitted, that I will attempt to submit it anyway, that the attempt will fail,
+            that I accept the failure, and that I understand the failure does not exempt me from Code 418 in the meantime.
+            I have read the Act in full (estimated reading time: 14 hours). I acknowledge that HOOCER will update the Act
+            after I finish reading it.
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBMIT -->
+    <div class="submit-section">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+        <button class="btn-primary" id="eye9SubmitBtn" onclick="attemptSubmit()" style="font-size:16px;padding:14px 28px;">
+          SUBMIT FORM EYE-9
+        </button>
+        <div style="font-size:12px;color:var(--gov-dark-grey);max-width:380px;line-height:1.6;">
+          By clicking Submit, you initiate a submission process that will not complete.
+          This is by design. We are sorry.
+        </div>
+      </div>
+
+      <div class="impossible-timer" id="submittingTimer">SUBMITTING... <span id="submitCountdown">--</span></div>
+
+      <div class="submit-error-log" id="submitErrorLog">
+        <!-- errors populated by JS -->
+      </div>
+    </div>
+
+  </div><!-- /form-wrapper -->
+
+  <footer class="site-footer">
+    <div class="footer-top">♛ HOOCER — Form EYE-9 Administration</div>
+    <div>&copy; Crown Copyright 2026 &nbsp;|&nbsp; Code 418 Compliance &nbsp;|&nbsp; <a href="LEGISLATION.md">Legislation</a></div>
+    <div class="footer-disclaimer">Form EYE-9 has never been successfully submitted. This is documented in HOOCER Internal Guidance Note IGN-44. We remain available to assist with the process, within limits.</div>
+  </footer>
+
+  <script>
+  // ---------------------------------------------------------------
+  // FORM EYE-9 — the form that cannot be submitted
+  //
+  // submission sequence:
+  //   1. Run validation (always finds something wrong)
+  //   2. If somehow all fields are filled: add a new requirement
+  //   3. Show a countdown
+  //   4. "Timeout" the submission
+  //   5. Report a different error each time
+  //
+  // the trick is the error messages get more unhinged as you retry.
+  // retry count is tracked. there's a special message at retry 5.
+  // ---------------------------------------------------------------
+
+  'use strict';
+
+  let retryCount = 0;
+
+  const SUBMIT_ERRORS = [
+    { code: 'ERR-418-001', msg: 'Form reference number required. Form reference number is issued upon successful submission. Submission cannot proceed without a form reference number.' },
+    { code: 'ERR-418-002', msg: 'Justice of the Peace signature verification failed. The Justice of the Peace you specified could not be reached for comment. This is normal.' },
+    { code: 'ERR-418-003', msg: 'Ocular Notary Registry is offline. The registry was last online in March 2022. It is expected to return online in 2028, subject to budget review.' },
+    { code: 'ERR-418-004', msg: 'Payment reference not found. Payment must be made before submission. Payment cannot be made before receiving a submission reference. Submission reference requires payment. See ERR-418-004(b): Circular Dependency Detected.' },
+    { code: 'ERR-418-005', msg: 'Session timeout. The form must be completed in a single session without blinking. A blink was detected during completion. This invalidates the session. Please restart from Section 1.' },
+    { code: 'ERR-418-006', msg: 'Contradictory declarations in Sections 3A and 3B. Both sections are mandatory. This issue is documented. It has been escalated. The escalation is pending review.' },
+    { code: 'ERR-418-007', msg: 'NBRN could not be validated against the National Blink Registry. The Registry is available at the URL redirected to by this form. Please try again.' },
+    { code: 'ERR-418-008', msg: 'Form EYE-3 (Right Ocular Registration) must be submitted before Form EYE-9, or within 14 days after. EYE-3 was not detected. Please submit EYE-3 first. EYE-3 requires EYE-9 to be submitted first. This is a known issue.' },
+    { code: 'ERR-418-009', msg: 'Medical sign-off could not be verified. GMC number entered does not appear in the HOOCER Approved Ophthalmologist Register. The register has not been updated since 2020. New entries are not being accepted.' },
+    { code: 'ERR-418-010', msg: 'CRITICAL: Blink detected during submission. Submission invalidated under Code 418(d). This infringement has been added to your record. A new NOI may be issued. You have achieved the rare distinction of accruing a fine by attempting to opt out of fines.' },
+    { code: 'ERR-418-011', msg: 'Server-side validation error: HOOCER submission gateway is currently experiencing an issue. The issue has been logged. Support ticket opened: HOO-REF-2026-4471. Estimated resolution: under review.' },
+    { code: 'FATAL-418',   msg: 'FATAL: Submission gateway returned HTTP 418 I\'m a Teapot. This response code indicates the server is a teapot and refuses to brew coffee. It also, as of Code 418 implementation, refuses to accept EYE-9 forms. The developers have been informed. The developers are the same people who added Code 418 compliance to the HTTP layer. They stand by the decision.' },
+  ];
+
+  // ---- CONFLICT DETECTION ----
+  function checkConflicts() {
+    const s3a = document.querySelector('input[name="blink-nature-3a"]:checked');
+    const s3b = document.querySelector('input[name="blink-nature-3b"]:checked');
+
+    let conflictDetected = false;
+    const conflict3aEl = document.getElementById('conflict-3a');
+    const conflict3bEl = document.getElementById('conflict-3b');
+    const conflictBar  = document.getElementById('conflictBar');
+    const sects        = document.getElementById('conflictSections');
+
+    if (s3a && s3b) {
+      // Both selected — guaranteed conflict (the options are designed to conflict)
+      conflictDetected = true;
+      if (conflict3aEl) conflict3aEl.style.display = 'block';
+      if (conflict3bEl) conflict3bEl.style.display = 'block';
+      if (conflictBar)  { conflictBar.classList.add('show'); }
+      if (sects) sects.textContent = '3A and 3B';
+    } else {
+      if (conflict3aEl) conflict3aEl.style.display = 'none';
+      if (conflict3bEl) conflict3bEl.style.display = 'none';
+      if (conflictBar)  conflictBar.classList.remove('show');
+    }
+
+    // Update checkbox note
+    const checks    = document.querySelectorAll('.commitment-check:checked');
+    const noteEl    = document.getElementById('checkboxNote');
+    if (noteEl) noteEl.textContent = `${checks.length} of 6 mandatory items checked.`;
+
+    return conflictDetected;
+  }
+
+  // ---- SUBMISSION ATTEMPT ----
+  function attemptSubmit() {
+    retryCount++;
+    const btn      = document.getElementById('eye9SubmitBtn');
+    const timer    = document.getElementById('submittingTimer');
+    const errorLog = document.getElementById('submitErrorLog');
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+    if (timer) timer.classList.add('show');
+    if (errorLog) { errorLog.innerHTML = ''; errorLog.classList.add('show'); }
+
+    // Count down from 7 then fail
+    let countdown = 7;
+    const countEl = document.getElementById('submitCountdown');
+    if (countEl) countEl.textContent = countdown;
+
+    const countdownInterval = setInterval(() => {
+      countdown--;
+      if (countEl) countEl.textContent = countdown;
+      if (countdown <= 0) {
+        clearInterval(countdownInterval);
+        if (timer) timer.classList.remove('show');
+        showSubmitErrors();
+        btn.disabled = false;
+        btn.textContent = retryCount < 5 ? 'TRY AGAIN' : 'TRY AGAIN (THIS WILL NOT WORK)';
+      }
+    }, 1000);
+  }
+
+  function showSubmitErrors() {
+    const log = document.getElementById('submitErrorLog');
+    if (!log) return;
+
+    // Always show 3-5 errors, cycling through them
+    const numErrors = 3 + Math.floor(Math.random() * 3);
+    const errorSet  = [];
+    for (let i = 0; i < numErrors; i++) {
+      const idx = (retryCount + i) % SUBMIT_ERRORS.length;
+      errorSet.push(SUBMIT_ERRORS[idx]);
+    }
+
+    // Add a special message at retry 5
+    if (retryCount >= 5) {
+      const special = document.createElement('div');
+      special.className = 'error-line warning';
+      special.textContent = `[${new Date().toLocaleTimeString('en-GB')}] NOTE: This is your ${retryCount}th submission attempt. HOOCER has noted your persistence. It has been added to your file under "Exceptional Ocular Tenacity." This does not reduce the fine.`;
+      log.appendChild(special);
+    }
+
+    errorSet.forEach((err, i) => {
+      setTimeout(() => {
+        const line = document.createElement('div');
+        line.className = 'error-line' + (err.code.startsWith('FATAL') ? ' warning' : '');
+        line.textContent = `[${new Date().toLocaleTimeString('en-GB')}] ${err.code}: ${err.msg}`;
+        log.appendChild(line);
+        log.scrollTop = log.scrollHeight;
+      }, i * 400);
+    });
+
+    setTimeout(() => {
+      const final = document.createElement('div');
+      final.className = 'error-line warning';
+      final.textContent = `[${new Date().toLocaleTimeString('en-GB')}] SUBMISSION FAILED. Form not submitted. Status: pending resolution. Code 418 monitoring remains active in the interim.`;
+      log.appendChild(final);
+      log.scrollTop = log.scrollHeight;
+    }, numErrors * 400 + 300);
+  }
+  </script>
+</body>
+</html>

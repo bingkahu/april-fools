@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <title>Appeal Assistance Chatbot — HOOCER</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="compliance-score.js" defer></script>
+  <style>
+    body { margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--gov-light-grey); display:flex; flex-direction:column; min-height:100vh; }
+
+    .chat-page-layout { flex:1; padding:20px; display:flex; gap:20px; max-width:1000px; margin:0 auto; width:100%; }
+    @media(max-width:700px){ .chat-page-layout { flex-direction:column; } }
+
+    .chat-info-panel { width:260px; flex-shrink:0; }
+    @media(max-width:700px){ .chat-info-panel { width:auto; } }
+
+    .info-card { background:#fff; border:1px solid #ccc; border-left:4px solid var(--gov-black); padding:14px; margin-bottom:14px; font-size:13px; line-height:1.7; }
+
+    .status-badge { display:inline-block; padding:2px 10px; font-size:11px; font-weight:bold; letter-spacing:1px; }
+    .status-badge.online { background:var(--gov-green); color:#fff; }
+    .status-badge.thinking { background:var(--gov-blue); color:#fff; }
+    .status-badge.error { background:var(--gov-red); color:#fff; }
+
+    .quick-prompts { display:flex; flex-direction:column; gap:6px; margin-top:14px; }
+    .quick-btn { background:#fff; border:1px solid #ccc; padding:7px 10px; text-align:left; cursor:pointer; font-size:12px; font-family:inherit; transition:background 0.1s; }
+    .quick-btn:hover { background:var(--gov-light-grey); }
+
+    /* blink accusation mid-chat */
+    .mid-chat-accusation {
+      background:var(--gov-red);
+      color:#fff;
+      padding:8px 14px;
+      font-size:11px;
+      font-weight:bold;
+      letter-spacing:0.5px;
+      margin:4px 0;
+      border-left:3px solid #fff;
+      animation:accu-in 0.3s ease;
+    }
+
+    @keyframes accu-in {
+      from { opacity:0; transform:translateX(-6px); }
+      to   { opacity:1; transform:translateX(0); }
+    }
+
+    .chat-disclaimer {
+      font-size:11px;
+      color:var(--gov-dark-grey);
+      font-style:italic;
+      text-align:center;
+      padding:8px;
+      border-top:1px solid #eee;
+      flex-shrink:0;
+    }
+
+    /* Turn counter — shows how many times you've gone around the loop -->
+    .loop-counter {
+      font-family:"Courier New",monospace;
+      font-size:10px;
+      color:rgba(255,255,255,0.35);
+      text-align:center;
+      padding:4px;
+    }
+  </style>
+</head>
+<body class="page-body">
+
+  <header class="page-header">
+    <span style="font-size:20px;">♛</span>
+    <span>HOOCER — Automated Appeal Assistance System (AAAS) — v4.1</span>
+    <span style="margin-left:auto;font-size:11px;opacity:0.5;font-family:monospace;">Code 418 Appeal Support</span>
+  </header>
+
+  <nav class="site-nav">
+    <a href="index.html">⊙ Home</a>
+    <a href="blink-simulator.html">Blink Training</a>
+    <a href="surveillance-map.html">National Map</a>
+    <a href="van-tracker.html">Van Tracker</a>
+    <a href="chatbot.html" style="background:var(--gov-yellow);color:var(--gov-black);">Appeal Bot</a>
+    <a href="tribunal-audio.html">Tribunal Logs</a>
+    <a href="form-EYE-9.html">Form EYE-9</a>
+    <a href="intranet.html">Intranet ⚠</a>
+    <a href="gaslight.html">Compliance Check</a>
+  </nav>
+
+  <div class="chat-page-layout">
+
+    <!-- INFO PANEL -->
+    <div class="chat-info-panel">
+      <div class="info-card">
+        <strong>AAAS Status</strong><br>
+        <span class="status-badge online" id="botStatusBadge">ONLINE</span><br><br>
+        HOOCER's Automated Appeal Assistance System is operational and ready to assist you
+        with your Code 418 appeal query.<br><br>
+        <em>Response time: 2–4 seconds</em><br>
+        <em>Queue position: <span id="queuePosition">1</span></em><br>
+        <em>Humans involved: <strong>0</strong></em>
+      </div>
+
+      <div class="info-card">
+        <strong>Can this bot help me?</strong><br><br>
+        The AAAS can assist with:
+        <ul style="padding-left:16px;margin-top:6px;">
+          <li>Confirming that your fine exists</li>
+          <li>Explaining that appeals take 6–18 months</li>
+          <li>Directing you to forms</li>
+          <li>Apologising for delays</li>
+          <li>Contradicting its previous responses</li>
+          <li>Starting again from the beginning</li>
+        </ul>
+      </div>
+
+      <div class="info-card" style="border-left-color:var(--gov-red);">
+        <strong>⚠ Important</strong><br><br>
+        Using this chatbot does not pause the 28-day fine payment deadline, constitute a formal
+        appeal, or reduce your Code 418 liability. Blinking during this conversation will be noted.
+      </div>
+
+      <div style="font-size:12px; color:var(--gov-dark-grey); line-height:1.7; padding:8px 0;">
+        <strong>Quick questions:</strong>
+      </div>
+      <div class="quick-prompts">
+        <button class="quick-btn" onclick="sendQuick('How do I appeal my fine?')">How do I appeal?</button>
+        <button class="quick-btn" onclick="sendQuick('When will my appeal be decided?')">Appeal timeline?</button>
+        <button class="quick-btn" onclick="sendQuick('I did not blink')">I did not blink</button>
+        <button class="quick-btn" onclick="sendQuick('This is outrageous')">This is outrageous</button>
+        <button class="quick-btn" onclick="sendQuick('Can I speak to a human?')">Can I speak to a human?</button>
+        <button class="quick-btn" onclick="sendQuick('What is Code 418?')">What is Code 418?</button>
+        <button class="quick-btn" onclick="sendQuick('I want a refund')">I want a refund</button>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div style="flex:1;display:flex;flex-direction:column;">
+      <div class="chat-container" style="height:560px;">
+        <div class="chat-header">
+          <div class="chat-bot-avatar">⊙</div>
+          <div>
+            <div style="font-weight:bold;">HOOCER AAAS — Appeal Assistant</div>
+            <div style="font-size:10px;opacity:0.55;font-weight:normal;margin-top:1px;" id="botSubStatus">Online — Code 418 appeal support</div>
+          </div>
+          <div class="loop-counter" style="margin-left:auto;" id="loopCounter"></div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+          <!-- Initial bot message — populated on load -->
+        </div>
+
+        <div class="chat-input-area">
+          <input type="text" id="chatInput" placeholder="Type your appeal query here..." maxlength="200" onkeydown="if(event.key==='Enter')sendMessage()" />
+          <button onclick="sendMessage()">Send ↗</button>
+        </div>
+
+        <div class="chat-disclaimer">
+          Responses are automated. No humans were involved. No humans will be involved.
+          This conversation is recorded under Code 418(g) (Documented Ocular Discourse).
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-top">♛ HOOCER — Automated Appeal Assistance</div>
+    <div>&copy; Crown Copyright 2026 &nbsp;|&nbsp; Code 418 &nbsp;|&nbsp; <a href="LEGISLATION.md">Legislation</a></div>
+    <div class="footer-disclaimer">This chatbot cannot help you. It can only redirect you. We are sorry.</div>
+  </footer>
+
+  <script>
+  // ---------------------------------------------------------------
+  // HOOCER AAAS — Automated Appeal Assistance Chatbot
+  //
+  // Design philosophy (for this chatbot, not generally):
+  //   1. Never directly answer the question
+  //   2. Apologise often
+  //   3. Redirect to forms that don't help
+  //   4. Contradict previous statements
+  //   5. Occasionally accuse the user of blinking
+  //   6. Loop back to the beginning when stuck
+  //   7. Reference Code 418 constantly
+  //   8. Be sincerely, effortfully, completely useless
+  //
+  // The user should feel like they're talking to a very polite
+  // wall. The wall apologises. The wall has a reference number.
+  // The wall was designed by committee. In Milton Keynes.
+  // ---------------------------------------------------------------
+
+  'use strict';
+
+  let turnCount   = 0;    // how many user messages have been sent
+  let blinksDuring = 0;  // blinks "detected" during the conversation
+  let topicMemory  = []; // vague memory of what was discussed
+  const loopThreshold = 6; // after this many turns, we start looping
+
+  // ---- RESPONSE LOGIC ----
+  // Each entry: condition (fn -> bool), response (string or fn)
+  // First matching response is used.
+
+  const BOT_RESPONSES = [
+    // EXPLICIT KEYWORDS
+
+    { match: has('appeal'),
+      respond: cycle([
+        "To lodge a formal appeal against a Notice of Ocular Infringement, you'll need to complete Form OCI-7. I can direct you to the form, though I should note that completing the form does not guarantee a review will take place in your lifetime.",
+        "Appeals are handled by the Independent Ocular Tribunal (Automated Division). Response time is 6–18 months. I can confirm your appeal was received. I cannot confirm anything else, including whether it will be read.",
+        "I understand you'd like to appeal. That's a valid feeling. Feelings are not, however, grounds for appeal under Code 418. I'd suggest Form OCI-7 as a starting point. The form itself cannot be submitted. This is a known issue.",
+        "Your right to appeal is enshrined in Section 7 of the Act. Section 7 also specifies that the right to appeal does not guarantee a positive outcome, a timely outcome, or indeed any outcome within the current calendar year.",
+      ])
+    },
+
+    { match: has('fine', 'penalty', 'charge', 'pay', 'payment'),
+      respond: cycle([
+        "Your fine is payable within 28 days. Payment methods include bank transfer, cheque, and a premium telephone line (£1.50/min, average call duration 47 minutes). The online payment portal is currently unavailable due to a maintenance window that began in March 2024.",
+        "I understand you have concerns about the fine amount. Fine calculations are governed by Ocular Compliance Code 418(b). The Blink Severity Multiplier is determined algorithmically and is not subject to manual review. I apologise. The algorithm does not.",
+        "To confirm: the fine amount reflects the number of excess blinks multiplied by the BSM, plus applicable surcharges, minus a small discount. If the amount appears unusual, please note that the system experienced what our IT team describes as 'expected unexpected behaviour.' The fine stands.",
+      ])
+    },
+
+    { match: has('did not blink', 'didnt blink', "didn't blink", 'not blink', 'never blinked'),
+      respond: cycle([
+        "I hear you. HOOCER's records indicate otherwise. I want to be clear that I'm not calling you a liar — the algorithm is calling you a liar. That's a distinction we consider important.",
+        "Under Ocular Compliance Code 418(c), claiming not to have blinked while blinking is itself an infringement. I'm not saying that's what you've done. The algorithm is saying that's what you've done.",
+        "I understand this can be frustrating. Our Blink Detection Engine (BDE v3.7) has a published accuracy rate of 'very high.' The methodology behind 'very high' is not publicly available. I can provide the reference number for the relevant transparency request if helpful. The request was denied.",
+        "You say you didn't blink. HOOCER's records say you did. In situations where citizen testimony conflicts with HOOCER's records, HOOCER's records take precedence. This is in Section 5(3) of the Act. I can read it to you. It won't change anything but I can read it.",
+      ])
+    },
+
+    { match: has('human', 'person', 'speak to', 'real person', 'agent', 'someone'),
+      respond: cycle([
+        "I completely understand your preference for speaking with a human colleague. Unfortunately, HOOCER's Automated Division handles all appeal queries. Human staff are available in Milton Keynes (in-person only, appointment required, appointments currently unavailable). I am, for all practical purposes, as human as this process gets.",
+        "There are no humans in this loop. I want to be transparent about that. If it helps, I am very thorough. Thoroughness is my primary function. I am thoroughly telling you: no humans. I'm sorry.",
+        "A request to speak with human staff has been noted on your file under 'escalation requests.' These are reviewed quarterly. I cannot confirm the next review date. I can confirm it is quarterly.",
+      ])
+    },
+
+    { match: has('refund', 'money back', 'return'),
+      respond: () => "I can confirm that HOOCER does not issue refunds under any current provisions of the Ocular Regulation Act. A refund would require proof that no infringement occurred. Proof is submitted via Form OCI-7. Form OCI-7 appeals are decided by the Automated Tribunal. The Automated Tribunal's decisions are final. I hope this clarifies the refund process, which is to say: there is no refund process."
+    },
+
+    { match: has('outrageous', 'ridiculous', 'unfair', 'wrong', 'mistake', 'error', 'rubbish', 'nonsense', 'absurd', 'joke', 'joke'),
+      respond: cycle([
+        "I understand your frustration and I want to acknowledge it sincerely. Your feelings are valid. Your feelings are, however, not covered by the Ocular Regulation Act. What is covered is the infringement. I'm sorry.",
+        "I've noted your feedback. It's been logged under 'citizen sentiment' with a status of 'acknowledged.' Acknowledgement does not constitute review. I'm required to tell you that. I'm sorry.",
+        "HOOCER takes all feedback seriously. Your feedback has been added to the Q3 sentiment digest, which is reviewed by the Director-General of Ocular Compliance at some point. Timescale not confirmed. Thank you for engaging with the process.",
+      ])
+    },
+
+    { match: has('code 418', '418'),
+      respond: cycle([
+        "Ocular Compliance Code 418 governs the monitoring, detection, recording, and enforcement of blink activity across all of England, Wales, and Scotland. It was introduced under powers in the Ocular Regulation and Eyelid Governance Act 2019 and is the primary enforcement instrument for blink infringements. Code 418 also, I'm told, shares its number with an HTTP status code for 'I'm a teapot.' The similarity is coincidental and legally irrelevant.",
+        "Code 418 has several subsections: 418(a) basic infringement, 418(b) wilful/reckless blink, 418(c) blink denial, 418(d) ironic non-compliance during training, 418(e) unacceptable appeal, 418(f) record flagging. There are further subsections. The pocket edition runs to 340 pages. A large print edition is available in Milton Keynes.",
+      ])
+    },
+
+    { match: has('hello', 'hi', 'good morning', 'good afternoon', 'hey', 'greetings'),
+      respond: () => "Hello! Welcome to HOOCER's Automated Appeal Assistance System. I'm here to help you navigate the appeal process for your Notice of Ocular Infringement. I should mention that 'help' in this context means 'accompany' rather than 'assist.' How can I accompany you today?"
+    },
+
+    { match: has('form', 'oci-7', 'oce', 'eye-9'),
+      respond: cycle([
+        "The relevant form for your appeal is Form OCI-7 (Appeal Against Ocular Infringement Notice). It's available on the HOOCER portal. Once submitted — and I stress: submission does not guarantee processing — your appeal enters the queue for the Automated Tribunal. Current queue depth is not disclosed. Previous queue depth was also not disclosed.",
+        "Form EYE-9 (Renunciation of Blinking) is available for citizens who wish to waive their right to blink entirely. This removes future Code 418 liability but requires countersigning by a Justice of the Peace. It also requires continuing to not blink, which the form acknowledges may present practical challenges.",
+      ])
+    },
+
+    { match: has('when', 'timeline', 'how long', 'duration'),
+      respond: cycle([
+        "Appeal timelines are 6–18 months from acknowledgment of submission. Acknowledgment takes 4–6 weeks. The letter confirming acknowledgment takes 2–3 further weeks. A letter confirming the letter is sent within 14 days of the confirmation letter. You should expect a total of 8–22 months before you hear anything. That is the timeline.",
+        "HOOCER processes appeals in the order they are received, except where the Automated Tribunal prioritises cases by complexity. Complexity is determined algorithmically. Your case's complexity rating is not disclosed. I can tell you it exists.",
+      ])
+    },
+
+    // FALLBACK RESPONSES (used when nothing matches, and when looping)
+    { match: () => turnCount % loopThreshold === 0 && turnCount > 0,
+      respond: () => `I want to flag that we've now exchanged ${turnCount} messages and I'm not sure we've made meaningful progress. I apologise for any frustration this may have caused. I'd like to suggest, again, that you complete Form OCI-7, and in the meantime consider <a href="form-EYE-9.html" style="color:var(--gov-blue);">Form EYE-9</a> as a long-term blink management strategy. Is there anything else I can fail to assist you with?`
+    },
+    { match: () => true,
+      respond: cycle([
+        "Thank you for your message. I want to be helpful, and I'm working on it. In the meantime, your query has been noted under Code 418(g) (Documented Ocular Discourse). Is there anything more specific I can fail to assist you with?",
+        "I understand. Could you clarify your query? I ask not because clarification will help, but because asking for clarification is a standard conversational move that buys time while I formulate a response that won't resolve your issue.",
+        "I've processed your message. I want to be transparent: I've processed it in the sense of receiving it. Processing in the sense of understanding or acting on it is a separate, longer-term project. I apologise for the confusion.",
+        "Your query is noted. It's now been added to a document called 'Unresolved Citizen Queries' which is reviewed — I'm told — on a rolling basis. The rolling has not been defined temporally. I'm sorry.",
+        "Thank you for your patience. I'm reviewing your options, which are: Form OCI-7, Form EYE-9, Mandatory Blink Training (Module BT-7), or accepting the fine. I recommend one of these. I cannot tell you which one.",
+        "I see. That's helpful context. It hasn't changed the available outcomes, but it's helpful. The outcomes remain: appeal (6-18 months), pay (28 days), or formally renounce blinking (Form EYE-9). I'm sorry we keep ending up here.",
+      ])
+    },
+  ];
+
+  // ---- Cycling responses (so the bot doesn't repeat immediately) ----
+  const responseCounters = new Map();
+  function cycle(responses) {
+    const key = responses[0]; // use first response as key
+    return () => {
+      const i = (responseCounters.get(key) || 0) % responses.length;
+      responseCounters.set(key, i + 1);
+      return responses[i];
+    };
+  }
+
+  function has(...words) {
+    return (msg) => words.some(w => msg.toLowerCase().includes(w));
+  }
+
+  function getResponse(userMsg) {
+    for (const rule of BOT_RESPONSES) {
+      if (rule.match(userMsg)) {
+        const resp = rule.respond;
+        return typeof resp === 'function' ? resp() : resp;
+      }
+    }
+    return "I'm sorry, I didn't quite catch that. Could you rephrase? (This is not a guarantee that rephrasing will help.)";
+  }
+
+  // ---- CHAT FUNCTIONS ----
+  function addMessage(text, sender) {
+    const messages = document.getElementById('chatMessages');
+    if (!messages) return;
+
+    const msg = document.createElement('div');
+    msg.className = `chat-msg ${sender}`;
+    msg.innerHTML = text + `<span class="chat-msg-meta">${new Date().toLocaleTimeString('en-GB')} &middot; ${sender === 'bot' ? 'HOOCER AAAS' : 'You'}</span>`;
+    messages.appendChild(msg);
+
+    // Auto-scroll
+    messages.scrollTop = messages.scrollHeight;
+
+    // Occasionally accuse mid-chat (every 3-4 user messages)
+    if (sender === 'user' && Math.random() < 0.3) {
+      blinksDuring++;
+      setTimeout(() => {
+        const acc = document.createElement('div');
+        acc.className = 'mid-chat-accusation';
+        acc.innerHTML = `⚠ BLINK DETECTED during this conversation — Code 418(b). Infringement #${blinksDuring} logged. (${new Date().toLocaleTimeString('en-GB')})`;
+        messages.appendChild(acc);
+        messages.scrollTop = messages.scrollHeight;
+      }, 1500);
+    }
+  }
+
+  function showTyping() {
+    const messages = document.getElementById('chatMessages');
+    const typing = document.createElement('div');
+    typing.className = 'chat-typing';
+    typing.id = 'typingIndicator';
+    typing.innerHTML = '<span></span><span></span><span></span>';
+    messages.appendChild(typing);
+    messages.scrollTop = messages.scrollHeight;
+    document.getElementById('botStatusBadge').textContent = 'THINKING';
+    document.getElementById('botStatusBadge').className = 'status-badge thinking';
+  }
+
+  function hideTyping() {
+    const t = document.getElementById('typingIndicator');
+    if (t) t.remove();
+    document.getElementById('botStatusBadge').textContent = 'ONLINE';
+    document.getElementById('botStatusBadge').className = 'status-badge online';
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const msg   = input.value.trim();
+    if (!msg) return;
+
+    input.value = '';
+    turnCount++;
+    topicMemory.push(msg.slice(0, 30));
+
+    // Update loop counter
+    const loopEl = document.getElementById('loopCounter');
+    if (loopEl && turnCount >= loopThreshold) {
+      loopEl.textContent = `LOOP ${Math.floor(turnCount / loopThreshold)}`;
+    }
+
+    addMessage(msg, 'user');
+    input.disabled = true;
+
+    showTyping();
+
+    // Simulate thinking delay — 1.5 to 3.5 seconds
+    const delay = 1500 + Math.random() * 2000;
+    setTimeout(() => {
+      hideTyping();
+      const response = getResponse(msg);
+      addMessage(response, 'bot');
+      input.disabled = false;
+      input.focus();
+
+      // Queue position "moves forward" (doesn't actually do anything)
+      const qEl = document.getElementById('queuePosition');
+      if (qEl) qEl.textContent = Math.max(1, (parseInt(qEl.textContent) || 1));
+    }, delay);
+  }
+
+  function sendQuick(text) {
+    document.getElementById('chatInput').value = text;
+    sendMessage();
+  }
+
+  // ---- INIT ----
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      addMessage(
+        "Good day. Welcome to HOOCER's Automated Appeal Assistance System, operating under Ocular Compliance Code 418(g). " +
+        "I'm here to help you with your Notice of Ocular Infringement appeal. " +
+        "I should note at the outset that while I am here to help, my ability to help is constrained by the fact that the outcome of your appeal has, algorithmically speaking, already been determined. " +
+        "How may I assist you today?",
+        'bot'
+      );
+    }, 600);
+  });
+  </script>
+</body>
+</html>

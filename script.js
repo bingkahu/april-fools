@@ -721,3 +721,81 @@ window.addEventListener('load', () => {
   console.log('%c(This is a joke website. Please blink normally. We beg you.)', 'color:#aaa;font-size:11px;font-style:italic;');
   console.log('%cTip: try the Konami code. It will not help you.', 'color:#1d70b8;font-size:11px;');
 });
+
+// ---------------------------------------------------------------
+// ADDITIONS — Code 418 references throughout
+// ---------------------------------------------------------------
+
+// update the code 418 status metric
+function updateCode418Status() {
+  const el = document.getElementById('code418status');
+  if (!el) return;
+
+  const blinkPct = state.blinkCount / BLINK_LIMIT;
+  if (state.isFinedAlready) {
+    el.textContent = 'ENFORCED';
+    el.className = 'metric-val red-text';
+  } else if (blinkPct > 0.8) {
+    el.textContent = 'IMMINENT';
+    el.className = 'metric-val red-text';
+  } else if (blinkPct > 0.5) {
+    el.textContent = 'ELEVATED';
+    el.className = 'metric-val orange-text';
+  } else {
+    el.textContent = 'PENDING';
+    el.className = 'metric-val orange-text';
+  }
+}
+
+// patch the existing updateMetrics to also call updateCode418Status
+const _origUpdateMetrics = updateMetrics;
+// (can't easily monkey-patch, so the call is inlined in the main flow)
+
+// Van status text variety
+const VAN_STATUS_MESSAGES = [
+  'en route to your area',
+  'approximately 8–12 minutes away',
+  'rerouting via A-road',
+  'stopped for refreshments (mandatory)',
+  'navigating one-way system',
+  'approximately nearby',
+  'ETA: recalculating',
+  'GPS signal interrupted',
+  'behind a tractor (not Code 418-related)',
+];
+
+setInterval(() => {
+  const el = document.getElementById('vanStatus');
+  if (el) el.textContent = VAN_STATUS_MESSAGES[Math.floor(Math.random() * VAN_STATUS_MESSAGES.length)];
+}, 7000);
+
+// Konami code message update — references Code 418
+function triggerBlinkAmnesty() {
+  const overlay = document.createElement('div');
+  overlay.className = 'konami-overlay';
+  overlay.innerHTML = `
+    <div class="konami-box">
+      <h2>♛ BLINK AMNESTY ACTIVATED ♛</h2>
+      <p>
+        You have successfully invoked the <em>Ocular Clemency Protocol</em>
+        by entering the correct input sequence.
+      </p>
+      <p>
+        The Secretary of State for Ocular Affairs has determined that the Konami Code is
+        <strong>not a legally recognised instrument</strong> under <em>Ocular Compliance Code 418(k):
+        Electronic Input Sequences as Legal Instruments (Amendment 2022)</em>.
+      </p>
+      <p>
+        Your fine has been: <strong>NOT REDUCED. Code 418 applies.</strong>
+      </p>
+      <p style="font-size:12px;margin-top:16px;opacity:0.6;">
+        Entering this code has been added to your case file under
+        "Attempted Procedural Circumvention (Code 418 Annex G)." Sorry.
+      </p>
+      <button class="btn-primary" onclick="this.closest('.konami-overlay').remove()" style="margin-top:16px;">
+        Understood (closes this, records a blink per Code 418(c))
+      </button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}

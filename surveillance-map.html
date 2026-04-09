@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <title>National Blink Surveillance Map — HOOCER</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="compliance-score.js" defer></script>
+  <style>
+    body { margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--gov-light-grey); display:flex; flex-direction:column; min-height:100vh; }
+
+    .map-layout { display:grid; grid-template-columns:1fr 280px; gap:0; flex:1; }
+    @media(max-width:700px){ .map-layout { grid-template-columns:1fr; } }
+
+    .map-panel {
+      background:#0e1927;
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      min-height:500px;
+    }
+
+    .map-topbar {
+      background:rgba(0,0,0,0.6);
+      color:var(--terminal-green);
+      font-family:"Courier New",monospace;
+      font-size:11px;
+      padding:8px 14px;
+      letter-spacing:1.5px;
+      display:flex;
+      justify-content:space-between;
+      border-bottom:1px solid rgba(0,255,65,0.15);
+      flex-shrink:0;
+    }
+
+    .uk-svg-wrapper {
+      flex:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      padding:10px;
+    }
+
+    #uk-map-svg {
+      max-width:100%;
+      max-height:100%;
+      width:auto;
+      height:100%;
+    }
+
+    /* blink event dots */
+    .blink-dot {
+      cursor:default;
+      animation:dot-appear 0.3s ease forwards;
+    }
+
+    @keyframes dot-appear {
+      from { opacity:0; r:2px; }
+      to   { opacity:1; }
+    }
+
+    .blink-dot.infringement { fill:#d4351c; }
+    .blink-dot.normal       { fill:#00703c; }
+    .blink-dot.suspicious   { fill:#f47738; }
+
+    .blink-dot-ring {
+      fill:none;
+      animation:ring-expand 1.5s ease-out forwards;
+    }
+
+    @keyframes ring-expand {
+      from { r:3px; opacity:0.8; stroke-width:2; }
+      to   { r:16px; opacity:0; stroke-width:1; }
+    }
+
+    /* sidebar */
+    .map-sidebar {
+      background:var(--gov-black);
+      color:#fff;
+      display:flex;
+      flex-direction:column;
+      border-left:1px solid #1a1a1a;
+      overflow:hidden;
+    }
+
+    .sidebar-section {
+      border-bottom:1px solid rgba(255,255,255,0.07);
+      padding:14px;
+    }
+
+    .sidebar-section h4 {
+      font-size:10px;
+      letter-spacing:2.5px;
+      opacity:0.4;
+      margin-bottom:10px;
+      text-transform:uppercase;
+    }
+
+    .national-stat {
+      display:flex;
+      justify-content:space-between;
+      align-items:baseline;
+      margin-bottom:8px;
+      font-size:12px;
+    }
+
+    .national-stat .label { opacity:0.55; }
+
+    .national-stat .value {
+      font-family:"Courier New",monospace;
+      font-weight:bold;
+      color:var(--terminal-green);
+      font-size:14px;
+    }
+
+    .national-stat .value.red   { color:#ff6b6b; }
+    .national-stat .value.amber { color:#ffb347; }
+
+    .region-list { font-size:11px; }
+    .region-row {
+      display:flex;
+      justify-content:space-between;
+      padding:4px 0;
+      border-bottom:1px solid rgba(255,255,255,0.04);
+    }
+    .region-row .rname { opacity:0.65; }
+    .region-row .rscore { font-family:"Courier New",monospace; font-size:10px; }
+    .region-row .rscore.r { color:#ff6b6b; }
+    .region-row .rscore.a { color:#ffb347; }
+    .region-row .rscore.g { color:var(--terminal-green); }
+
+    .incident-feed {
+      flex:1;
+      overflow-y:auto;
+      font-family:"Courier New",monospace;
+      font-size:11px;
+      color:var(--terminal-green);
+      padding:10px;
+      scrollbar-width:thin;
+      scrollbar-color:var(--gov-green) #111;
+      max-height:240px;
+    }
+
+    .incident-line { padding:2px 0; border-bottom:1px solid rgba(0,255,65,0.07); }
+    .incident-line.inf { color:#ff6b6b; }
+    .incident-line.sus { color:#ffb347; }
+
+    /* region labels on the map */
+    .region-label {
+      fill:rgba(255,255,255,0.35);
+      font-family:Arial,sans-serif;
+      font-size:10px;
+      pointer-events:none;
+      text-anchor:middle;
+    }
+
+    .map-legend {
+      background:rgba(0,0,0,0.5);
+      color:#fff;
+      font-family:"Courier New",monospace;
+      font-size:10px;
+      padding:8px 12px;
+      display:flex;
+      gap:16px;
+      border-top:1px solid rgba(255,255,255,0.06);
+      flex-shrink:0;
+      flex-wrap:wrap;
+    }
+
+    .legend-item { display:flex; align-items:center; gap:6px; opacity:0.65; }
+    .legend-dot { width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }
+  </style>
+</head>
+<body class="page-body">
+
+  <header class="page-header">
+    <span style="font-size:20px;">♛</span>
+    <span>HOOCER — National Blink Surveillance System v2.1</span>
+    <span style="margin-left:auto;font-size:11px;opacity:0.5;font-family:monospace;" id="liveTime">--:--:--</span>
+  </header>
+
+  <nav class="site-nav">
+    <a href="index.html">⊙ Home</a>
+    <a href="blink-simulator.html">Blink Training</a>
+    <a href="surveillance-map.html" style="background:var(--gov-yellow);color:var(--gov-black);">National Map</a>
+    <a href="van-tracker.html">Van Tracker</a>
+    <a href="chatbot.html">Appeal Bot</a>
+    <a href="tribunal-audio.html">Tribunal Logs</a>
+    <a href="form-EYE-9.html">Form EYE-9</a>
+    <a href="intranet.html">Intranet ⚠</a>
+    <a href="gaslight.html">Compliance Check</a>
+  </nav>
+
+  <div style="background:#1a2a1a;color:var(--terminal-green);font-family:'Courier New',monospace;font-size:11px;padding:7px 16px;letter-spacing:1px;display:flex;gap:16px;flex-wrap:wrap;border-bottom:1px solid rgba(0,255,65,0.2);">
+    <span>● SYSTEM: <strong>ONLINE</strong></span>
+    <span>● REGIONS MONITORED: <strong>12/12</strong></span>
+    <span>● CODE 418 ENFORCEMENT: <strong>ACTIVE NATIONWIDE</strong></span>
+    <span>● DATA CLASSIFICATION: <strong>OFFICIAL-SENSITIVE</strong></span>
+    <span style="margin-left:auto;">OCULAR COMPLIANCE CODE 418 — ALL BLINK EVENTS LOGGED</span>
+  </div>
+
+  <div class="map-layout" style="flex:1;">
+
+    <!-- MAP AREA -->
+    <div class="map-panel">
+      <div class="map-topbar">
+        <span>NATIONAL OCULAR SURVEILLANCE MAP — LIVE FEED</span>
+        <span id="eventCount">EVENTS TODAY: <strong>0</strong></span>
+      </div>
+
+      <div class="uk-svg-wrapper">
+        <!-- A simplified, deliberately imprecise map of the UK.
+             Geographic accuracy was deprioritised in favour of it fitting in the viewport.
+             The cartography team raised concerns. They were reminded of Code 418.
+             They did not raise further concerns. -->
+        <svg id="uk-map-svg" viewBox="0 0 400 620" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <!-- background -->
+          <rect width="400" height="620" fill="#0e1927"/>
+
+          <!-- ===== UK mainland regions (rough polygons, deliberately imprecise) ===== -->
+          <!-- Scotland -->
+          <polygon points="140,20 180,15 220,25 245,50 250,90 240,130 210,145 185,150 165,140 145,125 130,100 125,70 135,45"
+                   fill="#112240" stroke="#1a3a5e" stroke-width="1.5" class="region" data-region="Scotland"/>
+
+          <!-- Northern Ireland -->
+          <polygon points="70,130 100,120 120,135 115,160 90,165 68,155"
+                   fill="#112240" stroke="#1a3a5e" stroke-width="1.5" class="region" data-region="N. Ireland"/>
+
+          <!-- North England (approximate lump) -->
+          <polygon points="145,155 210,145 235,165 240,200 230,225 200,235 175,240 155,230 140,210 138,185"
+                   fill="#0f1e33" stroke="#1a3a5e" stroke-width="1.5" class="region" data-region="North England"/>
+
+          <!-- Yorkshire & Humber -->
+          <polygon points="175,240 230,225 240,250 235,275 210,285 180,280 165,265 168,250"
+                   fill="#0f1e33" stroke="#1a3a5e" stroke-width="1.5" class="region" data-region="Yorkshire"/>
+
+          <!-- East Midlands -->
+          <polygon points="168,280 210,285 235,305 228,335 205,345 180,340 160,325 158,305"
+                   fill="#0f1e33" stroke="#1a3a5e" stroke-width="1.5" class="region" data-region="E. Midlands"/>
+
+          <!-- West Midlands -->
+          <polygon points="140,270 168,280 160,325 140,330 118,310 115,285 128,270"
+                   fill="#0f1e33" stroke="#1a3a5e" stroke-width="1.5" class="region" data-region="W. Midlands"/>
+
+          <!-- Wales -->
+          <polygon points="85,265 140,270 128,310 118,335 100,355 78,340 70,310 75,280"
+                   fill="#0f1e33" stroke="#1a3a5e" stroke-width="1.5" class="region" data-region="Wales"/>
+
+          <!-- East Anglia -->
+          <polygon points="235,305 275,290 300,310 295,345 265,360 235,350 228,335"
+                   fill="#0f1e33" stroke="#1a3a5e" stroke-width="1.5" class="region" data-region="East Anglia"/>
+
+          <!-- London & SE -->
+          <polygon points="205,345 265,360 280,390 265,415 235,425 210,415 195,390 195,365"
+                   fill="#112240" stroke="#1a3a5e" stroke-width="2" class="region" data-region="London"/>
+
+          <!-- South England -->
+          <polygon points="100,380 195,365 195,390 210,415 235,425 225,445 195,460 165,465 140,455 110,435 88,410 82,385"
+                   fill="#0f1e33" stroke="#1a3a5e" stroke-width="1.5" class="region" data-region="South England"/>
+
+          <!-- South West -->
+          <polygon points="78,340 100,355 100,380 82,385 60,375 50,355 58,340"
+                   fill="#0f1e33" stroke="#1a3a5e" stroke-width="1.5" class="region" data-region="South West"/>
+
+          <!-- North West / Mersey -->
+          <polygon points="125,225 155,230 145,260 128,270 108,260 105,240 112,228"
+                   fill="#0f1e33" stroke="#1a3a5e" stroke-width="1.5" class="region" data-region="North West"/>
+
+          <!-- Region labels -->
+          <text x="185" y="90"  class="region-label">Scotland</text>
+          <text x="92"  y="145" class="region-label" font-size="8">N.Ireland</text>
+          <text x="190" y="200" class="region-label">N. England</text>
+          <text x="202" y="265" class="region-label">Yorkshire</text>
+          <text x="130" y="300" class="region-label" font-size="9">W.Mids</text>
+          <text x="195" y="315" class="region-label" font-size="9">E.Mids</text>
+          <text x="105" y="315" class="region-label" font-size="9">Wales</text>
+          <text x="260" y="325" class="region-label" font-size="9">E.Anglia</text>
+          <text x="235" y="390" class="region-label">London</text>
+          <text x="163" y="425" class="region-label" font-size="9">S.England</text>
+          <text x="67"  y="365" class="region-label" font-size="8">SW</text>
+          <text x="125" y="255" class="region-label" font-size="8">NW</text>
+
+          <!-- Milton Keynes marker — always highlighted, always watching -->
+          <circle cx="213" cy="355" r="5" fill="none" stroke="#ffdd00" stroke-width="1.5" opacity="0.8"/>
+          <circle cx="213" cy="355" r="2" fill="#ffdd00" opacity="0.9"/>
+          <text x="218" y="350" fill="#ffdd00" font-size="8" font-family="Arial,sans-serif" opacity="0.8">MK HQ</text>
+
+          <!-- Dot container — populated by JS -->
+          <g id="blink-dots"></g>
+        </svg>
+      </div>
+
+      <div class="map-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#00703c;"></div> Compliant blink</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f47738;"></div> Suspicious blink</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#d4351c;"></div> Code 418 infringement</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ffdd00;"></div> HOOCER HQ (Milton Keynes)</div>
+        <span style="margin-left:auto;opacity:0.35;font-size:10px;">All data fabricated. Map not to scale. Geographic inaccuracies are intentional.</span>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="map-sidebar">
+      <div class="sidebar-section">
+        <h4>National Statistics</h4>
+        <div class="national-stat"><span class="label">Total blinks today:</span><span class="value" id="statTotal">0</span></div>
+        <div class="national-stat"><span class="label">Code 418 violations:</span><span class="value red" id="statViolations">0</span></div>
+        <div class="national-stat"><span class="label">NOIs issued today:</span><span class="value amber" id="statNOIs">0</span></div>
+        <div class="national-stat"><span class="label">Citizens monitored:</span><span class="value">64.3M</span></div>
+        <div class="national-stat"><span class="label">Vans deployed:</span><span class="value amber" id="statVans">47</span></div>
+        <div class="national-stat"><span class="label">Appeals denied:</span><span class="value red" id="statDenied">0</span></div>
+      </div>
+
+      <div class="sidebar-section">
+        <h4>Regional Compliance (%)</h4>
+        <div class="region-list" id="regionList">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <div class="sidebar-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+        <h4>Live Incident Feed — Code 418</h4>
+        <div class="incident-feed" id="incidentFeed"></div>
+      </div>
+
+      <div style="padding:10px 14px;border-top:1px solid rgba(255,255,255,0.07);font-size:10px;opacity:0.3;font-family:'Courier New',monospace;line-height:1.7;">
+        HOOCER NBSS v2.1 (build 47)<br>
+        All data: real-time fabrication<br>
+        Next refresh: continuous<br>
+        Classified: OFFICIAL-SENSITIVE
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-top">♛ HOOCER — National Blink Surveillance System</div>
+    <div>&copy; Crown Copyright 2026 &nbsp;|&nbsp; Code 418 nationwide &nbsp;|&nbsp; <a href="LEGISLATION.md">Legislation</a></div>
+    <div class="footer-disclaimer">All surveillance data is entirely fabricated. No citizens are actually monitored. This is a joke. Please blink normally.</div>
+  </footer>
+
+  <script>
+  // ---------------------------------------------------------------
+  // National Blink Surveillance System — frontend module
+  //
+  // The map generates random blink events and places dots on the
+  // UK map SVG. The dots appear, pulse, and fade.
+  // The statistics count up. The incident feed scrolls.
+  // None of this data is real.
+  //
+  // The geographic coordinates are approximate at best.
+  // The cartography team sent a strongly worded memo.
+  // It was filed under "pending review" where memos go to die.
+  // ---------------------------------------------------------------
+
+  'use strict';
+
+  // Region data — centre coordinates on the SVG, names, and initial compliance %
+  // (higher number = more blinking = worse compliance. of course.)
+  const REGIONS = [
+    { name: 'Scotland',     cx: 185, cy: 90,  compliance: 72 },
+    { name: 'N. Ireland',   cx: 92,  cy: 145, compliance: 68 },
+    { name: 'N. England',   cx: 190, cy: 200, compliance: 55 },
+    { name: 'Yorkshire',    cx: 205, cy: 260, compliance: 48 },
+    { name: 'W. Midlands',  cx: 130, cy: 300, compliance: 43 },
+    { name: 'E. Midlands',  cx: 200, cy: 315, compliance: 51 },
+    { name: 'Wales',        cx: 105, cy: 315, compliance: 61 },
+    { name: 'East Anglia',  cx: 260, cy: 325, compliance: 58 },
+    { name: 'London',       cx: 235, cy: 390, compliance: 29 }, // London is the worst. always.
+    { name: 'S. England',   cx: 163, cy: 425, compliance: 44 },
+    { name: 'South West',   cx: 67,  cy: 360, compliance: 63 },
+    { name: 'N. West',      cx: 125, cy: 250, compliance: 47 },
+  ];
+
+  const INCIDENT_NAMES = [
+    'M. Blink','D. Lidsworth','G. Cornea','P. Retina','S. Pupil',
+    'T. Ocular','H. Yelid','B. Squint','R. Macula','C. Iris',
+    'J. Dewdrop','K. Lachrym','A. Person','[REDACTED]','User_448',
+    'N. Twitch','O. Wink','P. Flutter','Anon_891','D. Thompson',
+  ];
+
+  let stats = { total: 0, violations: 0, nois: 0, vans: 47, denied: 0, events: 0 };
+  let dotIdCounter = 0;
+
+  // ---- Build region compliance list ----
+  function buildRegionList() {
+    const container = document.getElementById('regionList');
+    if (!container) return;
+    container.innerHTML = REGIONS.map(r => {
+      const cls = r.compliance > 60 ? 'g' : r.compliance > 40 ? 'a' : 'r';
+      return `<div class="region-row">
+        <span class="rname">${r.name}</span>
+        <span class="rscore ${cls}">${r.compliance}%</span>
+      </div>`;
+    }).join('');
+  }
+
+  // ---- Update stats display ----
+  function updateStats() {
+    document.getElementById('statTotal').textContent     = stats.total.toLocaleString();
+    document.getElementById('statViolations').textContent = stats.violations.toLocaleString();
+    document.getElementById('statNOIs').textContent      = stats.nois.toLocaleString();
+    document.getElementById('statVans').textContent      = stats.vans;
+    document.getElementById('statDenied').textContent    = stats.denied.toLocaleString();
+    document.getElementById('eventCount').innerHTML      = `EVENTS TODAY: <strong>${stats.events}</strong>`;
+  }
+
+  // ---- Add a blink dot to the SVG map ----
+  function addBlinkDot(region, type) {
+    const dotsGroup = document.getElementById('blink-dots');
+    if (!dotsGroup) return;
+
+    // slight random offset from region centre — citizens are scattered
+    const jitter = 22;
+    const x = region.cx + (Math.random() - 0.5) * jitter;
+    const y = region.cy + (Math.random() - 0.5) * jitter;
+    const id = 'dot-' + (dotIdCounter++);
+
+    const dotColor = type === 'infringement' ? '#d4351c' : type === 'suspicious' ? '#f47738' : '#00703c';
+    const ringColor = dotColor;
+    const r = type === 'infringement' ? 4 : 3;
+
+    // Group: dot + ring
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.id = id;
+
+    // Ring that expands and fades
+    const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    ring.setAttribute('cx', x);
+    ring.setAttribute('cy', y);
+    ring.setAttribute('r', '3');
+    ring.setAttribute('fill', 'none');
+    ring.setAttribute('stroke', ringColor);
+    ring.setAttribute('stroke-width', '1.5');
+    ring.style.animation = 'ring-expand 1.5s ease-out forwards';
+
+    // Main dot
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('cx', x);
+    dot.setAttribute('cy', y);
+    dot.setAttribute('r', r);
+    dot.setAttribute('fill', dotColor);
+    dot.style.opacity = '0.85';
+
+    g.appendChild(ring);
+    g.appendChild(dot);
+    dotsGroup.appendChild(g);
+
+    // Remove dot after 4–7 seconds
+    setTimeout(() => { if (g.parentNode) g.parentNode.removeChild(g); }, 4000 + Math.random() * 3000);
+  }
+
+  // ---- Add an incident to the feed ----
+  function addIncident(region, type) {
+    const feed = document.getElementById('incidentFeed');
+    if (!feed) return;
+
+    const name  = INCIDENT_NAMES[Math.floor(Math.random() * INCIDENT_NAMES.length)];
+    const time  = new Date().toLocaleTimeString('en-GB');
+    let text, cls;
+
+    if (type === 'infringement') {
+      text = `[${time}] ${name} — ${region.name} — ⚠ CODE 418 INFRINGEMENT`;
+      cls = 'incident-line inf';
+    } else if (type === 'suspicious') {
+      text = `[${time}] ${name} — ${region.name} — suspicious blink flagged`;
+      cls = 'incident-line sus';
+    } else {
+      text = `[${time}] ${name} — ${region.name} — blink logged, within threshold`;
+      cls = 'incident-line';
+    }
+
+    const line = document.createElement('div');
+    line.className = cls;
+    line.textContent = text;
+    feed.insertBefore(line, feed.firstChild);
+
+    while (feed.children.length > 40) feed.removeChild(feed.lastChild);
+  }
+
+  // ---- Generate a blink event ----
+  function generateEvent() {
+    const region = REGIONS[Math.floor(Math.random() * REGIONS.length)];
+
+    // London blinkrates are higher. They're stressed. It's London.
+    const bias = region.name === 'London' ? 0.45 : 0.25;
+    const rand = Math.random();
+    let type;
+
+    if (rand < bias * 0.5) {
+      type = 'infringement';
+      stats.violations++;
+      if (Math.random() < 0.6) stats.nois++;
+      if (Math.random() < 0.9) stats.denied++;
+    } else if (rand < bias) {
+      type = 'suspicious';
+    } else {
+      type = 'normal';
+    }
+
+    stats.total++;
+    stats.events++;
+
+    // drift compliance (drift toward lower — things always get worse)
+    region.compliance = Math.max(15, Math.min(85, region.compliance + (Math.random() < 0.35 ? 1 : -1)));
+
+    addBlinkDot(region, type);
+    addIncident(region, type);
+    updateStats();
+    buildRegionList();
+  }
+
+  // ---- Clock ----
+  function updateClock() {
+    const el = document.getElementById('liveTime');
+    if (el) el.textContent = new Date().toLocaleTimeString('en-GB');
+  }
+
+  // ---- Init ----
+  // Seed with some events so the map doesn't look empty on load
+  for (let i = 0; i < 8; i++) {
+    setTimeout(generateEvent, i * 200);
+  }
+
+  // Ongoing event generation
+  setInterval(generateEvent, 800 + Math.random() * 700);
+  setInterval(updateClock, 1000);
+
+  // Van count drifts occasionally. They get lost. It happens.
+  setInterval(() => {
+    const drift = Math.random() < 0.3 ? -1 : Math.random() < 0.2 ? 2 : 0;
+    stats.vans = Math.max(30, Math.min(80, stats.vans + drift));
+  }, 8000);
+  </script>
+</body>
+</html>

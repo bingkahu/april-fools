@@ -3,456 +3,266 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Official HM Ocular Compliance portal. Your blinks are being monitored." />
+  <meta name="description" content="Official HM Ocular Compliance portal. Ocular Compliance Code 418 applies." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="manifest.json" />
   <title>HOOCER — HM Office for Ocular Compliance &amp; Eyelid Regulation</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="compliance-score.js" defer></script>
 </head>
 <body>
-
-  <!-- ======================================================
-       SPLASH SCREEN
-       The face of bureaucracy. Slightly too much yellow.
-  ====================================================== -->
   <div id="splash" class="screen active">
     <div class="crown" aria-hidden="true">♛</div>
-
-    <div class="department-seal" aria-label="HOOCER official seal">
-      <div class="seal-inner">HOOCER</div>
-    </div>
-
+    <div class="department-seal" aria-label="HOOCER official seal"><div class="seal-inner">HOOCER</div></div>
     <h1>HM Office for Ocular Compliance<br>&amp; Eyelid Regulation</h1>
-
     <p class="official-notice">OFFICIAL &mdash; SENSITIVE &mdash; HANDLE WITH CARE NEAR EYES</p>
-
     <div class="warning-box">
       <strong>⚠ IMPORTANT NOTICE ⚠</strong><br><br>
       This portal monitors your blink activity in accordance with the
       <em>Ocular Regulation and Eyelid Governance Act 2019</em>
-      (as amended by the Blink Frequency (Emergency Powers) Order 2022).<br><br>
+      (as amended by the Blink Frequency (Emergency Powers) Order 2022)
+      and subject to <strong>Ocular Compliance Code 418</strong>.<br><br>
       By entering this portal you <strong>consent</strong> to having your blinks counted,
       judged, classified, and if necessary, fined. The legal blink threshold is
       <strong>25 blinks per session</strong>. Anything outside normal parameters is
-      <strong>suspicious</strong> and will be noted on your permanent record.
+      <strong>suspicious</strong> and will be noted on your permanent record.<br><br>
     </div>
-
     <button class="btn-primary" onclick="enterPortal()">ENTER PORTAL</button>
-
     <p class="small-print">
       * Entering this portal constitutes full legal consent to blink monitoring under
-      Schedule 4 of the Ocular Regulation Act. If you do not consent,
-      please stop having eyes, or contact your regional HOOCER office (Milton Keynes only).
+      Schedule 4 of the Ocular Regulation Act and Ocular Compliance Code 418(a).
+      If you do not consent, please stop having eyes, or contact your regional HOOCER
+      office (Milton Keynes only, no walk-ins, appointments required, appointments not available).
     </p>
   </div>
 
-  <!-- ======================================================
-       MONITORING SCREEN
-       The main event. The numbers go up. This is fine.
-  ====================================================== -->
   <div id="monitor" class="screen">
     <header class="portal-header">
       <span class="crown-small" aria-hidden="true">♛</span>
       <span>HOOCER Citizen Blink Monitoring Portal</span>
       <span class="case-ref" id="caseRef">Generating reference...</span>
     </header>
-
+    <nav class="site-nav" aria-label="HOOCER service navigation">
+      <a href="blink-simulator.html">Blink Training</a>
+      <a href="surveillance-map.html">National Map</a>
+      <a href="van-tracker.html">Van Tracker</a>
+      <a href="chatbot.html">Appeal Bot</a>
+      <a href="tribunal-audio.html">Tribunal Logs</a>
+      <a href="form-EYE-9.html">Form EYE-9</a>
+      <a href="intranet.html" title="This page is public by accident">Intranet ⚠</a>
+      <a href="gaslight.html">Compliance Check</a>
+      <a href="LEGISLATION.md">Legislation</a>
+    </nav>
     <div class="main-content">
-
-      <!-- LEFT: The terrifying counter -->
       <div class="left-panel">
         <h2>LIVE BLINK ANALYSIS</h2>
-
         <div class="blink-counter-box" aria-live="polite" aria-label="Blink count">
           <div class="blink-number" id="blinkCount">0</div>
           <div class="blink-label">BLINKS DETECTED</div>
-          <div class="blink-sublabel">this session</div>
+          <div class="blink-sublabel">this session &mdash; Code 418 monitoring active</div>
         </div>
-
         <div class="status-bar">
           <div class="status-indicator">
             <span class="status-dot green" id="statusDot"></span>
             <span id="statusText">MONITORING ACTIVE</span>
           </div>
         </div>
-
         <div class="blink-rate-box">
-          <div class="metric-row">
-            <span>Current blink rate:</span>
-            <span id="blinkRate" class="metric-val">calibrating...</span>
-          </div>
-          <div class="metric-row">
-            <span>Compliance status:</span>
-            <span id="compliance" class="metric-val green-text">REVIEWING</span>
-          </div>
-          <div class="metric-row">
-            <span>Eye moisture index:</span>
-            <span id="moistureIdx" class="metric-val">--</span>
-          </div>
-          <div class="metric-row">
-            <span>Lid velocity:</span>
-            <span id="lidVelocity" class="metric-val">--</span>
-          </div>
-          <div class="metric-row">
-            <span>Suspicion score:</span>
-            <span id="suspicionScore" class="metric-val">0/100</span>
-          </div>
+          <div class="metric-row"><span>Current blink rate:</span><span id="blinkRate" class="metric-val">calibrating...</span></div>
+          <div class="metric-row"><span>Compliance status:</span><span id="compliance" class="metric-val green-text">REVIEWING</span></div>
+          <div class="metric-row"><span>Eye moisture index:</span><span id="moistureIdx" class="metric-val">--</span></div>
+          <div class="metric-row"><span>Lid velocity:</span><span id="lidVelocity" class="metric-val">--</span></div>
+          <div class="metric-row"><span>Suspicion score:</span><span id="suspicionScore" class="metric-val">0/100</span></div>
+          <div class="metric-row"><span>Code 418 status:</span><span id="code418status" class="metric-val orange-text">PENDING</span></div>
         </div>
-
         <div class="legal-threshold">
-          ⚖ <strong>LEGAL BLINK THRESHOLD: 25 blinks</strong><br>
+          ⚖ <strong>LEGAL BLINK THRESHOLD: 25 blinks</strong> (Ocular Compliance Code 418)<br>
           Exceeding this limit triggers a Notice of Ocular Infringement (NOI-7B).
           You have been warned. We cannot warn you further. This was the warning.
         </div>
-
-        <button class="btn-deny" onclick="recordManualBlink()">
-          I DID NOT BLINK
-        </button>
-        <p class="btn-note">* Clicking this button records a blink</p>
-
+        <button class="btn-deny" onclick="recordManualBlink()">I DID NOT BLINK</button>
+        <p class="btn-note">* Per Code 418(c), clicking this button records a blink</p>
         <div class="progress-section" style="margin-top:16px;">
-          <div class="progress-label">
-            Blinks until fine: <span id="blinksUntilFine">25</span>
-          </div>
-          <div class="progress-bar-outer">
-            <div class="progress-bar-inner" id="progressBar" style="width:0%"></div>
-          </div>
+          <div class="progress-label">Blinks until fine: <span id="blinksUntilFine">25</span></div>
+          <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar" style="width:0%"></div></div>
+        </div>
+        <div style="margin-top:18px; padding:12px; background:#fff; border:1px solid #ccc; font-size:12px; line-height:1.9;">
+          <strong>OTHER HOOCER SERVICES:</strong><br>
+          <a href="blink-simulator.html" style="color:var(--gov-blue);">Blink Training Simulator</a> &mdash;
+          <a href="surveillance-map.html" style="color:var(--gov-blue);">National Surveillance Map</a> &mdash;
+          <a href="van-tracker.html" style="color:var(--gov-blue);">Van Tracker</a> &mdash;
+          <a href="gaslight.html" style="color:var(--gov-blue);">Compliance Check</a>
         </div>
       </div>
-
-      <!-- RIGHT: Fake surveillance data and facts -->
       <div class="right-panel">
         <h3>LIVE NATIONAL BLINK FEED</h3>
-        <p class="feed-subtitle">Monitoring 64.3 million citizens in real-time*</p>
-        <div id="blinkFeed" class="blink-feed" aria-label="Live national blink activity feed">
-          <!-- populated by JS. all names are fake. this entire website is fake. -->
-        </div>
-        <p class="feed-note">* approximate. some citizens are asleep and therefore blinking involuntarily, which is also an offence (Schedule 9).</p>
-
+        <p class="feed-subtitle">Monitoring 64.3 million citizens in real-time* &mdash; Code 418 enforcement active in all regions</p>
+        <div id="blinkFeed" class="blink-feed" aria-label="Live national blink activity feed"></div>
+        <p class="feed-note">* approximate. some citizens are asleep and therefore blinking involuntarily,
+        which is also an offence (Schedule 9, as amended by the Sleep Blinking (Separate Offence) Act 2020).</p>
         <div class="did-you-know">
-          <strong>📋 HOOCER INFORMATION NOTICE</strong><br>
+          <strong>📋 HOOCER INFORMATION NOTICE (Code 418)</strong><br>
           <span id="didYouKnow">Loading ocular fact...</span>
+        </div>
+        <div style="margin-top:14px; background:#fff8e1; border-left:4px solid #f47738; padding:12px; font-size:13px;">
+          <strong>⚠ VAN STATUS:</strong> A HOOCER Mobile Enforcement Van is currently
+          <span id="vanStatus">en route to your area</span>.
+          <a href="van-tracker.html" style="color:var(--gov-blue);">Track your van →</a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ======================================================
-       FINE SCREEN
-       Congratulations! You have been fined.
-  ====================================================== -->
   <div id="fine" class="screen">
     <header class="portal-header">
       <span class="crown-small" aria-hidden="true">♛</span>
-      <span>HOOCER — Notice of Ocular Infringement</span>
+      <span>HOOCER — Notice of Ocular Infringement (Code 418)</span>
       <span class="case-ref" id="fineRef">NOI/2026/---</span>
     </header>
-
+    <nav class="site-nav"><a href="blink-simulator.html">Blink Training</a><a href="surveillance-map.html">National Map</a><a href="van-tracker.html">Van Tracker</a><a href="chatbot.html">Appeal Bot</a><a href="tribunal-audio.html">Tribunal Logs</a><a href="form-EYE-9.html">Form EYE-9</a><a href="intranet.html">Intranet ⚠</a><a href="gaslight.html">Compliance Check</a></nav>
     <div class="fine-notice">
-      <div class="fine-banner">⚠ &nbsp; NOTICE OF OCULAR INFRINGEMENT &nbsp; ⚠</div>
-
+      <div class="fine-banner">⚠ &nbsp; NOTICE OF OCULAR INFRINGEMENT — CODE 418 &nbsp; ⚠</div>
       <div class="fine-body">
         <p class="fine-address">
           To: <strong id="citizenId">Citizen [REDACTED]</strong><br>
           From: HOOCER Enforcement Division, London SW1A<br>
           Date: <span id="fineDate"></span><br>
-          Reference: <span id="fineRefBody" class="mono"></span>
+          Reference: <span id="fineRefBody" class="mono"></span><br>
+          <strong>Ocular Compliance Code 418(b) — Wilful or Reckless Blink Activity</strong>
         </p>
-
-        <p>
-          Following automated monitoring of your ocular activity under powers granted by
-          the <em>Ocular Regulation and Eyelid Governance Act 2019</em>, it has been
-          determined that you have <strong>exceeded the legally permitted blink threshold</strong>
-          of 25 blinks per session. This Notice is issued pursuant to Section 4(2) of the Act.
-        </p>
-
+        <p>Following automated monitoring under <em>Ocular Regulation and Eyelid Governance Act 2019</em>
+        and <strong>Ocular Compliance Code 418</strong>, you have exceeded the legally permitted blink
+        threshold of 25 blinks. This Notice is issued pursuant to Section 4(2).</p>
         <table class="fine-table">
-          <tr>
-            <td>Blinks detected this session:</td>
-            <td id="fineBlinkCount">--</td>
-          </tr>
-          <tr>
-            <td>Legal threshold:</td>
-            <td>25</td>
-          </tr>
-          <tr>
-            <td>Excess blinks (chargeable):</td>
-            <td id="excessBlinks">--</td>
-          </tr>
-          <tr>
-            <td>Base fine rate (per excess blink):</td>
-            <td>£2.40</td>
-          </tr>
-          <tr>
-            <td>Blink Severity Multiplier (BSM):</td>
-            <td id="severityMult">--</td>
-          </tr>
-          <tr>
-            <td>Evening surcharge (if applicable):</td>
-            <td id="eveningSurcharge">--</td>
-          </tr>
-          <tr>
-            <td>Cooperative Citizen Discount:</td>
-            <td id="citizenDiscount">--</td>
-          </tr>
-          <tr class="fine-total-row">
-            <td><strong>TOTAL FINE PAYABLE:</strong></td>
-            <td><strong id="fineAmount">£--</strong></td>
-          </tr>
+          <tr><td>Blinks detected this session:</td><td id="fineBlinkCount">--</td></tr>
+          <tr><td>Legal threshold (Code 418):</td><td>25</td></tr>
+          <tr><td>Excess blinks (chargeable):</td><td id="excessBlinks">--</td></tr>
+          <tr><td>Base fine rate (per excess blink):</td><td>£2.40</td></tr>
+          <tr><td>Blink Severity Multiplier (BSM):</td><td id="severityMult">--</td></tr>
+          <tr><td>Evening surcharge (if applicable):</td><td id="eveningSurcharge">--</td></tr>
+          <tr><td>Cooperative Citizen Discount:</td><td id="citizenDiscount">--</td></tr>
+          <tr class="fine-total-row"><td><strong>TOTAL FINE PAYABLE:</strong></td><td><strong id="fineAmount">£--</strong></td></tr>
         </table>
-
-        <p>
-          You must pay this fine within <strong>28 days</strong> of the date of this Notice.
-          Failure to pay will result in escalation to the <em>Eyelid Tribunal</em>,
-          additional administrative fines, and possible <strong>Mandatory Blink Training</strong>
-          (4 days, Milton Keynes, non-refundable travel expenses).
-        </p>
-
+        <p>Pay within <strong>28 days</strong>. Failure results in escalation to the <em>Eyelid Tribunal</em>
+        and possible <strong>Mandatory Blink Training</strong> (4 days, Milton Keynes).
+        A <a href="van-tracker.html" style="color:var(--gov-blue);">HOOCER Mobile Enforcement Van</a> may be dispatched.</p>
         <div class="payment-note">
-          <strong>Payment methods accepted:</strong> Bank transfer, cheque payable to
-          "HOOCER Consolidated Fines Account," premium-rate telephone (calls cost £1.50/min,
-          average call 47 minutes), or renouncing blinking entirely
-          (requires Form EYE-9, countersigned by a Justice of the Peace).
+          <strong>Payment methods accepted:</strong> Bank transfer, cheque, premium-rate telephone (£1.50/min, avg 47 mins),
+          or renouncing blinking via <a href="form-EYE-9.html" style="color:#835300;">Form EYE-9</a>.
         </div>
-
         <div class="fine-buttons">
-          <button class="btn-pay" title="This button does not work. Neither does the payment telephone line. This is intentional.">
-            PAY FINE ONLINE ↗
-          </button>
-          <button class="btn-appeal" onclick="goToAppeal()">
-            LODGE AN APPEAL
-          </button>
+          <button class="btn-pay" title="This button does not work.">PAY FINE ONLINE ↗</button>
+          <button class="btn-appeal" onclick="goToAppeal()">LODGE AN APPEAL</button>
+          <a href="chatbot.html" style="display:inline-block;padding:12px 20px;background:var(--gov-dark-grey);color:#fff;text-decoration:none;font-weight:bold;font-size:14px;">SPEAK TO APPEAL BOT</a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ======================================================
-       APPEAL FORM
-       OCI-7: Your Last Hope (It Isn't)
-  ====================================================== -->
   <div id="appeal" class="screen">
-    <header class="portal-header">
-      <span class="crown-small" aria-hidden="true">♛</span>
-      <span>HOOCER — Form OCI-7: Appeal Against Ocular Infringement Notice</span>
-    </header>
-
+    <header class="portal-header"><span class="crown-small">♛</span><span>HOOCER — Form OCI-7: Appeal Against Ocular Infringement Notice</span></header>
+    <nav class="site-nav"><a href="blink-simulator.html">Blink Training</a><a href="surveillance-map.html">National Map</a><a href="van-tracker.html">Van Tracker</a><a href="chatbot.html">Appeal Bot</a><a href="tribunal-audio.html">Tribunal Logs</a><a href="form-EYE-9.html">Form EYE-9</a><a href="intranet.html">Intranet ⚠</a><a href="gaslight.html">Compliance Check</a></nav>
     <div class="appeal-wrapper">
-      <div class="appeal-intro">
-        <p>
-          You may appeal your Notice of Ocular Infringement by completing this form in
-          <strong>blue or black ink</strong> (or by clicking, whatever). Appeals are
-          reviewed by the <em>Independent Ocular Tribunal (Automated Division)</em>
-          within 6–18 months, subject to workload, staff availability, and general
-          administrative inertia.<br><br>
-          There is a <strong>£35 non-refundable appeal administration fee</strong>.
-          (Not really. We just said that to see if you'd leave. Some people leave.)
-        </p>
-      </div>
-
+      <div class="appeal-intro"><p>Appeals reviewed by <em>Independent Ocular Tribunal (Automated Division)</em> within 6–18 months.
+      Alternatively use our <a href="chatbot.html" style="color:var(--gov-blue);">automated appeal chatbot</a> (it won't help, but it's company).</p></div>
       <div class="form-section">
         <h3>SECTION A &mdash; Personal Details</h3>
-
-        <div class="form-group">
-          <label for="appealName">Full name (as it appears on your eyelids):</label>
-          <input type="text" id="appealName" placeholder="e.g. Margaret T. Blinksworth" autocomplete="off" />
-        </div>
-
-        <div class="form-group">
-          <label for="nbrn">National Blink Registration Number (NBRN):</label>
-          <input type="text" id="nbrn" placeholder="BLK-XXXX-XXXX" />
-          <span class="field-note">Don't have one? Neither do we. Make something up. We will verify it against a database that doesn't exist.</span>
-        </div>
-
-        <div class="form-group">
-          <label for="eyeColor">Eye colour (left eye only — right eye handled by separate form EYE-3):</label>
-          <select id="eyeColor">
-            <option value="">-- Select --</option>
-            <option>Brown</option>
-            <option>Blue</option>
-            <option>Green</option>
-            <option>Hazel</option>
-            <option>Suspiciously grey</option>
-            <option>Red (please see a doctor, not us)</option>
-            <option>My eyes have no colour, I am the void</option>
-            <option>I prefer not to say, but for legal reasons I must say</option>
-          </select>
-        </div>
+        <div class="form-group"><label for="appealName">Full name (as it appears on your eyelids):</label><input type="text" id="appealName" placeholder="e.g. Margaret T. Blinksworth" autocomplete="off" /></div>
+        <div class="form-group"><label for="nbrn">National Blink Registration Number (NBRN):</label><input type="text" id="nbrn" placeholder="BLK-XXXX-XXXX" /><span class="field-note">Don't have one? Neither do we. We will verify against a database that doesn't exist.</span></div>
+        <div class="form-group"><label for="eyeColor">Eye colour (left eye only — right eye needs separate form EYE-3):</label>
+          <select id="eyeColor"><option value="">-- Select --</option><option>Brown</option><option>Blue</option><option>Green</option><option>Hazel</option><option>Suspiciously grey</option><option>Red (please see a doctor, not us)</option><option>My eyes have no colour, I am the void</option><option>I prefer not to say, but for legal reasons I must say</option></select></div>
       </div>
-
       <div class="form-section">
         <h3>SECTION B &mdash; Grounds for Appeal</h3>
-
-        <div class="form-group">
-          <label>I believe my blinking was excessive due to: (select one)</label>
+        <div class="form-group"><label>Blinking was excessive due to: (select one)</label>
           <div class="radio-group">
             <label><input type="radio" name="reason" value="dust" /> There was dust</label>
             <label><input type="radio" name="reason" value="sun" /> The sun was in my eyes</label>
             <label><input type="radio" name="reason" value="emotional" /> I was experiencing emotions (involuntary)</label>
-            <label><input type="radio" name="reason" value="medical" /> Medical condition (see Section D, which doesn't exist on this form)</label>
+            <label><input type="radio" name="reason" value="medical" /> Medical condition (see Section D, which doesn't exist)</label>
             <label><input type="radio" name="reason" value="unaware" /> I was unaware blinking was regulated</label>
             <label><input type="radio" name="reason" value="notme" /> It was not me blinking. It was someone else using my eyes.</label>
             <label><input type="radio" name="reason" value="philosophy" /> I philosophically dispute the existence of blinks as discrete events</label>
-            <label><input type="radio" name="reason" value="button" /> I clicked "I Did Not Blink" which you told me would help</label>
+            <label><input type="radio" name="reason" value="button" /> I clicked "I Did Not Blink" which Code 418(c) converted to a blink</label>
           </div>
         </div>
-
-        <div class="form-group">
-          <label for="blinkDescription">
-            Please describe, in no more than 2,500 words, each individual blink you wish to dispute.
-            Include time, duration, and motivating circumstances for each blink:
-          </label>
-          <textarea id="blinkDescription" placeholder="Blink 1: It was approximately 14:32. I had been staring at a spreadsheet for 45 minutes and my eyes had begun to feel like two small desiccated raisins pressed into my face. I blinked for approximately 0.2 seconds. I believe this was reasonable..." rows="6"></textarea>
-          <span class="field-note">We will not read this. It is required nonetheless.</span>
-        </div>
+        <div class="form-group"><label for="blinkDescription">Describe each individual blink you wish to dispute (max 2,500 words):</label>
+          <textarea id="blinkDescription" placeholder="Blink 1: It was approximately 14:32. I had been staring at a spreadsheet..." rows="6"></textarea>
+          <span class="field-note">We will not read this. It is required nonetheless.</span></div>
       </div>
-
       <div class="form-section">
         <h3>SECTION C &mdash; Mitigating Circumstances</h3>
-
-        <div class="form-group">
-          <label>Were you in any of the following situations during the alleged blinking? (tick all that apply)</label>
+        <div class="form-group"><label>Were you in any of these situations? (tick all that apply)</label>
           <div class="checkbox-group">
-            <label><input type="checkbox" /> Near an onion (any variety)</label>
-            <label><input type="checkbox" /> Watching a film with a sad or unexpectedly poignant ending</label>
-            <label><input type="checkbox" /> Attempting to flirt (blink frequency often elevated, see Appendix C)</label>
-            <label><input type="checkbox" /> Participating in or recently losing a staring contest</label>
+            <label><input type="checkbox" /> Near an onion (any variety — Schedule 12 Allium Proximity Defence)</label>
+            <label><input type="checkbox" /> Watching a film with an unexpectedly poignant ending</label>
+            <label><input type="checkbox" /> Attempting to flirt (blink frequency often elevated)</label>
             <label><input type="checkbox" /> Existing in a human body against your will</label>
-            <label><input type="checkbox" /> In a wind tunnel or comparable draught</label>
+            <label><input type="checkbox" /> Under fluorescent lighting (Code 418 Annex D blink accelerant)</label>
             <label><input type="checkbox" /> Reading something on a screen for too long (ironic, we know)</label>
-            <label><input type="checkbox" /> Under fluorescent lighting (a known blink accelerant)</label>
           </div>
         </div>
-
-        <div class="form-group">
-          <label for="commitment">On a scale of 1–10, how committed are you to blinking less in future?</label>
+        <div class="form-group"><label for="commitment">Commitment to blinking less in future (1–10):</label>
           <input type="range" id="commitment" min="1" max="10" value="5" step="1" />
-          <span id="commitmentLabel" class="field-note">5 — Moderately committed</span>
-        </div>
+          <span id="commitmentLabel" class="field-note">5 — Moderately committed</span></div>
       </div>
-
       <div class="form-section">
         <h3>SECTION D &mdash; Statutory Declaration</h3>
-        <div class="form-group">
-          <label class="declaration-label">
-            <input type="checkbox" id="declarationCheck" />
-            I solemnly declare that the information above is accurate to the best of
-            my knowledge and belief, that I accept full legal responsibility for my
-            eyelids and their actions, that I understand HOOCER reserves the right to
-            increase my fine at any time for any reason including "general vibes,"
-            and that I have read and understood the <em>Ocular Regulation and Eyelid
-            Governance Act 2019</em> in its entirety (nobody has done this).
-          </label>
-        </div>
+        <div class="form-group"><label class="declaration-label"><input type="checkbox" id="declarationCheck" />
+          I solemnly declare this information is accurate, I accept responsibility for my eyelids,
+          HOOCER may increase my fine at any time for any reason including "general vibes,"
+          and I have read <em>Ocular Regulation Act 2019</em> and <strong>Code 418</strong> in full (nobody has done this).</label></div>
       </div>
-
-      <div style="text-align:center; padding: 0 20px 30px;">
-        <button class="btn-primary" id="appealSubmitBtn" onclick="submitAppeal()">
-          SUBMIT APPEAL &mdash; FORM OCI-7
-        </button>
-        <p class="small-print" style="color:#555; margin-top:10px;">
-          Submitting this form does not pause the 28-day payment deadline.
-          Nothing pauses the 28-day payment deadline. Time is linear and indifferent.
-        </p>
-        <div id="appealProcessing" class="processing-msg" style="display:none">
-          <div class="spinner">⊙</div>
-          <span id="processingStep">Routing to Ocular Infringement Team...</span>
-        </div>
+      <div style="text-align:center;padding:0 20px 30px;">
+        <button class="btn-primary" id="appealSubmitBtn" onclick="submitAppeal()">SUBMIT APPEAL — FORM OCI-7</button>
+        <p class="small-print" style="color:#555;margin-top:10px;">Submitting does not pause the 28-day deadline. Nothing does. Time is indifferent.</p>
+        <div id="appealProcessing" class="processing-msg" style="display:none"><div class="spinner">⊙</div><span id="processingStep">Routing to Ocular Infringement Team...</span></div>
       </div>
     </div>
   </div>
 
-  <!-- ======================================================
-       APPEAL DENIED
-       You knew this was coming.
-  ====================================================== -->
   <div id="denied" class="screen">
-    <header class="portal-header red-header">
-      <span class="crown-small" aria-hidden="true">♛</span>
-      <span>HOOCER — Appeal Determination Notice (Form ADN-1)</span>
-    </header>
-
+    <header class="portal-header red-header"><span class="crown-small">♛</span><span>HOOCER — Appeal Determination Notice — Code 418 Final Notice</span></header>
+    <nav class="site-nav" style="background:#aa2b16;"><a href="blink-simulator.html">Blink Training</a><a href="surveillance-map.html">National Map</a><a href="van-tracker.html">Van Tracker</a><a href="chatbot.html">Appeal Bot</a><a href="tribunal-audio.html">Tribunal Logs</a><a href="form-EYE-9.html">Form EYE-9</a><a href="intranet.html">Intranet ⚠</a><a href="gaslight.html">Compliance Check</a></nav>
     <div class="denied-wrapper">
       <div class="denied-box">
         <div class="denied-stamp" aria-label="Appeal denied">APPEAL<br>DENIED</div>
-
         <h2>Your appeal has been considered and rejected.</h2>
-
-        <p>
-          The Independent Ocular Tribunal (Automated Division) has reviewed your
-          application and found it to be <strong id="denialAdjective">unconvincing</strong>.
-          This determination was reached after careful review of your submitted evidence
-          by the Tribunal's automated processing system, which operates at approximately
-          the speed of bureaucracy.
-        </p>
-
-        <div class="denial-reason-box">
-          <strong>Official reason for denial:</strong><br><br>
-          <span id="denialReason">Loading determination...</span>
-        </div>
-
-        <p>
-          Your original fine of <strong id="deniedFineAmount">£--</strong> remains payable.
-          It has been increased by <strong id="fineIncrease">--</strong> to account for
-          the administrative costs of processing your appeal, including
-          <span id="increaseReason">photocopying</span>.
-        </p>
-
-        <p>
-          Your updated total fine is: <strong id="updatedFine" class="big-fine">£--</strong>
-        </p>
-
-        <p>
-          You may appeal this determination. Appeals against denied appeals are heard by the
-          <em>Sub-Committee on Ocular Complaints, Lid Governance, and Miscellaneous
-          Corneal Matters</em>. The next available hearing date is
-          <strong id="hearingDate">--</strong>. There is a £120 deposit
-          (non-refundable, non-applicable to the fine).
-        </p>
-
-        <div class="what-next">
-          <strong>WHAT HAPPENS NEXT:</strong>
+        <p>The Independent Ocular Tribunal (Automated Division) found your application <strong id="denialAdjective">unconvincing</strong> under <strong>Ocular Compliance Code 418(e): Unacceptable Appeal</strong>.</p>
+        <div class="denial-reason-box"><strong>Official reason for denial:</strong><br><br><span id="denialReason">Loading...</span></div>
+        <p>Fine of <strong id="deniedFineAmount">£--</strong> remains payable, increased by <strong id="fineIncrease">--</strong> for <span id="increaseReason">photocopying</span>.</p>
+        <p>Updated total: <strong id="updatedFine" class="big-fine">£--</strong></p>
+        <p>Next hearing date: <strong id="hearingDate">--</strong>. £120 deposit required. Non-refundable.
+        Or <a href="form-EYE-9.html" style="color:var(--gov-red);">renounce blinking entirely via Form EYE-9</a>.</p>
+        <div class="what-next"><strong>WHAT HAPPENS NEXT:</strong>
           <ul>
-            <li>You will receive a letter confirming this denial within 4–6 weeks</li>
-            <li>You will receive a letter confirming the above letter within a further 2–3 weeks</li>
-            <li>A HOOCER field officer may visit your residence to assess your blink habits in person — please ensure adequate lighting and have refreshments available</li>
-            <li>Your National Blink Record will be updated accordingly</li>
-            <li>Your case will be reviewed annually whether you like it or not</li>
+            <li>Denial letter within 4–6 weeks; confirmation of that letter within 2–3 further weeks</li>
+            <li>A HOOCER field officer may visit — <a href="van-tracker.html" style="color:var(--gov-red);">track their van here</a></li>
+            <li>National Blink Record updated under Code 418(f)</li>
+            <li>Case reviewed annually. Annual review of review scheduled for the year after.</li>
+            <li><strong>Strongly encouraged:</strong> <a href="blink-simulator.html" style="color:var(--gov-red);">Attempt Blink Training</a></li>
           </ul>
         </div>
-
-        <div style="text-align:center; padding-top: 20px; border-top: 1px solid #ddd; margin-top:20px;">
-          <button class="btn-primary" onclick="location.reload()">
-            Accept Determination &amp; Start Over
-          </button>
-          <p class="small-print" style="color:#888; margin-top: 10px;">
-            The blinking will continue regardless of your feelings on the matter.
-          </p>
+        <div style="text-align:center;padding-top:20px;border-top:1px solid #ddd;margin-top:20px;">
+          <button class="btn-primary" onclick="location.reload()">Accept Determination &amp; Start Over</button>
+          <p class="small-print" style="color:#888;margin-top:10px;">The blinking will continue regardless.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ======================================================
-       FOOTER — always there, always watching
-  ====================================================== -->
   <footer class="site-footer">
-    <div class="footer-top">
-      <span aria-hidden="true">♛</span>
-      HOOCER &mdash; HM Office for Ocular Compliance &amp; Eyelid Regulation
-    </div>
+    <div class="footer-top"><span>♛</span> HOOCER &mdash; HM Office for Ocular Compliance &amp; Eyelid Regulation</div>
     <div>An executive agency of the Ministry of Things That Don't Need Regulating</div>
-    <div>
-      &copy; Crown Copyright 2026 &nbsp;|&nbsp;
-      All blinks reserved &nbsp;|&nbsp;
-      <a href="teapot.txt">418</a> &nbsp;|&nbsp;
-      <a href="LEGISLATION.md">Legislation</a>
+    <div style="margin-top:6px;font-size:11px;opacity:0.5;">
+      <a href="blink-simulator.html">Blink Training</a> &nbsp;|&nbsp; <a href="surveillance-map.html">National Map</a> &nbsp;|&nbsp;
+      <a href="van-tracker.html">Van Tracker</a> &nbsp;|&nbsp; <a href="chatbot.html">Appeal Bot</a> &nbsp;|&nbsp;
+      <a href="tribunal-audio.html">Tribunal Logs</a> &nbsp;|&nbsp; <a href="form-EYE-9.html">Form EYE-9</a> &nbsp;|&nbsp;
+      <a href="intranet.html">Intranet</a> &nbsp;|&nbsp; <a href="gaslight.html">Compliance Check</a>
     </div>
-    <div class="footer-disclaimer">
-      HOOCER and all associated legislation is entirely fictional. No actual blinks are monitored.
-      Please blink normally. Blinking is healthy. We are so sorry for what we have done.
-    </div>
+    <div>&copy; Crown Copyright 2026 &nbsp;|&nbsp; All blinks reserved &nbsp;|&nbsp; <a href="teapot.txt">418</a> &nbsp;|&nbsp; <a href="LEGISLATION.md">Legislation</a></div>
+    <div class="footer-disclaimer">HOOCER is entirely fictional. No actual blinks are monitored. Please blink normally.</div>
   </footer>
-
   <script src="script.js"></script>
 </body>
 </html>

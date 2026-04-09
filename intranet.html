@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <title>HOOCER Staff Intranet — DO NOT SHARE</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="compliance-score.js" defer></script>
+  <style>
+    body { margin:0; font-family:Arial,Helvetica,sans-serif; background:#e8e4da; display:flex; flex-direction:column; min-height:100vh; }
+
+    /* Intranet has a different vibe — older, slightly more broken,
+       feels like it was built in 2011 and nobody's touched it.
+       Because that's what government intranets feel like.
+       (This is based on research. And personal experience.) */
+
+    .intranet-page-header {
+      background:#1a2a1a;
+      color:#fff;
+      padding:10px 20px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size:14px;
+      font-weight:bold;
+      border-bottom:4px solid var(--gov-yellow);
+    }
+
+    .intranet-warning-banner {
+      background:#fffacd;
+      border-bottom:2px solid #c9a800;
+      padding:8px 16px;
+      font-size:12px;
+      color:#5a4a00;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .broken-tool-notice {
+      background:#f8f0f0;
+      border:1px dashed var(--gov-red);
+      padding:10px;
+      font-size:12px;
+      color:var(--gov-red);
+      text-align:center;
+      font-style:italic;
+    }
+
+    /* Main grid */
+    .intranet-grid {
+      display:grid;
+      grid-template-columns:200px 1fr;
+      gap:0;
+      flex:1;
+    }
+    @media(max-width:640px){ .intranet-grid { grid-template-columns:1fr; } }
+
+    .intranet-sidebar {
+      background:#1a1a1a;
+      color:#fff;
+      padding:0;
+      min-height:100%;
+    }
+
+    .intranet-nav-section { padding:10px 0; border-bottom:1px solid #2a2a2a; }
+    .intranet-nav-section h4 { color:rgba(255,255,255,0.3); font-size:9px; letter-spacing:2px; padding:4px 14px; text-transform:uppercase; margin-bottom:2px; }
+    .intranet-nav-section a {
+      display:block; color:rgba(255,255,255,0.6); text-decoration:none; padding:6px 14px;
+      font-size:12px; transition:background 0.1s; border-left:3px solid transparent;
+    }
+    .intranet-nav-section a:hover { background:rgba(255,255,255,0.07); color:#fff; border-left-color:var(--gov-yellow); }
+    .intranet-nav-section a.active { background:var(--gov-green); color:#fff; border-left-color:var(--gov-yellow); }
+    .intranet-nav-section a.broken { color:rgba(255,100,100,0.6); }
+    .intranet-nav-section a.broken::after { content:' [broken]'; font-size:9px; opacity:0.6; }
+
+    .intranet-main {
+      padding:20px;
+      background:#f0ede8;
+    }
+
+    /* MEMO CARDS */
+    .memo-card {
+      background:#fffef0;
+      border:1px solid #ddd;
+      border-left:4px solid var(--gov-black);
+      padding:16px 18px;
+      margin-bottom:14px;
+      font-size:13px;
+      line-height:1.8;
+      position:relative;
+    }
+    .memo-card.urgent { border-left-color:var(--gov-red); background:#fff8f8; }
+    .memo-card.personal { border-left-color:var(--gov-blue); background:#f8fbff; }
+
+    .memo-from { font-size:11px; color:var(--gov-dark-grey); margin-bottom:8px; font-family:"Courier New",monospace; }
+    .memo-subject { font-weight:bold; font-size:14px; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid #ddd; }
+
+    .redacted { background:var(--gov-black); color:transparent; user-select:none; padding:0 3px; }
+    .redacted:hover { color:var(--gov-yellow); cursor:default; }
+
+    /* "TOOLS" — all broken -->
+    .tool-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; margin-top:14px; }
+    .tool-card {
+      background:#fff;
+      border:1px solid #ccc;
+      padding:14px;
+      text-align:center;
+      cursor:pointer;
+      transition:background 0.1s;
+      font-size:13px;
+    }
+    .tool-card:hover { background:#f5f5f5; }
+    .tool-card .tool-icon { font-size:2rem; display:block; margin-bottom:8px; }
+    .tool-card .tool-name { font-weight:bold; font-size:13px; }
+    .tool-card .tool-status { font-size:10px; margin-top:4px; color:var(--gov-red); font-style:italic; }
+
+    .tool-output {
+      background:var(--gov-black);
+      color:var(--terminal-green);
+      font-family:"Courier New",monospace;
+      font-size:12px;
+      padding:12px;
+      margin-top:10px;
+      min-height:60px;
+      display:none;
+    }
+    .tool-output.show { display:block; }
+
+    /* Section tab nav -->
+    .intranet-tab-nav {
+      display:flex;
+      gap:0;
+      border-bottom:2px solid #ccc;
+      margin-bottom:18px;
+      flex-wrap:wrap;
+    }
+    .intranet-tab {
+      padding:8px 16px;
+      background:#e0ddd8;
+      border:1px solid #ccc;
+      border-bottom:none;
+      cursor:pointer;
+      font-size:13px;
+      font-weight:bold;
+      margin-right:2px;
+      transition:background 0.1s;
+    }
+    .intranet-tab:hover { background:#d5d0c8; }
+    .intranet-tab.active { background:#fff; border-bottom:2px solid #fff; position:relative; bottom:-2px; }
+
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+
+    .bulletin-item {
+      padding:10px 14px;
+      background:#fff;
+      border:1px solid #ddd;
+      margin-bottom:8px;
+      font-size:13px;
+      line-height:1.65;
+      border-left:3px solid var(--gov-mid-grey);
+    }
+    .bulletin-item.new { border-left-color:var(--gov-green); }
+    .bulletin-item.action { border-left-color:var(--warning-orange); }
+    .bulletin-meta { font-size:10px; color:var(--gov-dark-grey); font-family:"Courier New",monospace; margin-top:6px; }
+
+    /* disciplinary notice -->
+    .disciplinary-notice {
+      background:#fff0e0;
+      border:2px dashed var(--warning-orange);
+      padding:16px;
+      font-size:13px;
+      line-height:1.75;
+      margin-bottom:14px;
+    }
+    .disciplinary-notice h4 { color:var(--warning-orange); margin-bottom:8px; }
+  </style>
+</head>
+<body class="page-body">
+
+  <!-- Different header style for the intranet — older, government-ier -->
+  <div class="intranet-page-header">
+    <span style="font-size:22px;">♛</span>
+    <div>
+      <div>HOOCER STAFF INTRANET — INTERNAL USE ONLY</div>
+      <div style="font-size:10px;opacity:0.5;font-weight:normal;margin-top:1px;">
+        INTRANET v3.4.1 (2014) &nbsp;|&nbsp; Best viewed in Internet Explorer 8 &nbsp;|&nbsp;
+        <span style="color:var(--gov-red);font-weight:bold;">⚠ THIS PAGE IS CURRENTLY PUBLIC — IT IS NOT SUPPOSED TO BE</span>
+      </div>
+    </div>
+    <div style="margin-left:auto;font-size:11px;opacity:0.5;" id="intranetTime">--:--</div>
+  </div>
+
+  <div class="intranet-warning-banner">
+    ⚠ <strong>PUBLIC ACCESS WARNING:</strong> This page was inadvertently made publicly accessible following a server migration in February 2026.
+    IT has been notified. Their ticket is: HOO-IT-2026-0774. Status: Open. This message will be removed once access is restricted.
+    In the meantime, members of the public who have reached this page are asked to please not read the memos, use the staff tools,
+    or share the contents of this page. We appreciate your cooperation. (You are not cooperating. We can see you.)
+  </div>
+
+  <nav class="site-nav">
+    <a href="index.html">⊙ Public Portal</a>
+    <a href="blink-simulator.html">Blink Training</a>
+    <a href="surveillance-map.html">National Map</a>
+    <a href="van-tracker.html">Van Tracker</a>
+    <a href="chatbot.html">Appeal Bot</a>
+    <a href="tribunal-audio.html">Tribunal Logs</a>
+    <a href="form-EYE-9.html">Form EYE-9</a>
+    <a href="intranet.html" style="background:var(--gov-yellow);color:var(--gov-black);">Intranet ⚠</a>
+    <a href="gaslight.html">Compliance Check</a>
+  </nav>
+
+  <div class="intranet-grid">
+    <!-- SIDEBAR -->
+    <div class="intranet-sidebar">
+      <div style="padding:14px;border-bottom:2px solid var(--gov-yellow);">
+        <div style="font-size:11px;opacity:0.4;letter-spacing:1px;margin-bottom:3px;">LOGGED IN AS</div>
+        <div style="font-weight:bold;font-size:13px;">Guest_Public_0x77</div>
+        <div style="font-size:10px;opacity:0.35;margin-top:2px;">You shouldn't be here</div>
+      </div>
+
+      <div class="intranet-nav-section">
+        <h4>Main</h4>
+        <a href="#" onclick="showTab('dashboard')" class="active" id="nav-dashboard">Dashboard</a>
+        <a href="#" onclick="showTab('memos')" id="nav-memos">Memos (14)</a>
+        <a href="#" onclick="showTab('bulletins')" id="nav-bulletins">Bulletins</a>
+        <a href="#" onclick="showTab('tools')" id="nav-tools">Staff Tools</a>
+        <a href="#" onclick="showTab('disciplinary')" id="nav-disciplinary">Disciplinary (3)</a>
+      </div>
+
+      <div class="intranet-nav-section">
+        <h4>Broken Links</h4>
+        <a href="#" class="broken" onclick="showBroken(this,'HR Portal')">HR Portal</a>
+        <a href="#" class="broken" onclick="showBroken(this,'Expenses')">Expenses System</a>
+        <a href="#" class="broken" onclick="showBroken(this,'Staff Directory')">Staff Directory</a>
+        <a href="#" class="broken" onclick="showBroken(this,'Blink Registry')">Blink Registry</a>
+        <a href="#" class="broken" onclick="showBroken(this,'Form Library')">Form Library</a>
+      </div>
+
+      <div class="intranet-nav-section">
+        <h4>Code 418</h4>
+        <a href="#" onclick="showTab('code418')">418 Status</a>
+        <a href="#" onclick="showTab('stats')">Today's Stats</a>
+      </div>
+
+      <div style="padding:12px 14px;font-size:10px;opacity:0.3;line-height:1.7;border-top:1px solid #2a2a2a;margin-top:auto;">
+        HOOCER Intranet v3.4.1<br>
+        Last updated: 2014<br>
+        For IT issues: ext. 4471<br>
+        Ext. 4471 rings in a room<br>
+        nobody uses anymore
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="intranet-main">
+
+      <!-- DASHBOARD -->
+      <div id="tab-dashboard" class="tab-content active">
+        <h3 style="margin-top:0;border-bottom:2px solid #ccc;padding-bottom:10px;">Staff Dashboard — Week 14</h3>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:18px;">
+          <div style="background:var(--gov-black);color:var(--terminal-green);padding:12px;font-family:'Courier New',monospace;text-align:center;">
+            <div style="font-size:2rem;font-weight:bold;" id="dash-nois">0</div>
+            <div style="font-size:9px;opacity:0.5;letter-spacing:1px;">NOIs TODAY</div>
+          </div>
+          <div style="background:var(--gov-black);color:var(--terminal-green);padding:12px;font-family:'Courier New',monospace;text-align:center;">
+            <div style="font-size:2rem;font-weight:bold;" id="dash-appeals">0</div>
+            <div style="font-size:9px;opacity:0.5;letter-spacing:1px;">APPEALS DENIED</div>
+          </div>
+          <div style="background:var(--gov-black);color:#ffb347;padding:12px;font-family:'Courier New',monospace;text-align:center;">
+            <div style="font-size:2rem;font-weight:bold;" id="dash-vans">47</div>
+            <div style="font-size:9px;opacity:0.5;letter-spacing:1px;">VANS DEPLOYED</div>
+          </div>
+          <div style="background:var(--gov-black);color:#ff6b6b;padding:12px;font-family:'Courier New',monospace;text-align:center;">
+            <div style="font-size:2rem;font-weight:bold;" id="dash-outstanding">--</div>
+            <div style="font-size:9px;opacity:0.5;letter-spacing:1px;">OUTSTANDING TICKETS</div>
+          </div>
+        </div>
+
+        <div class="memo-card urgent">
+          <div class="memo-from">FROM: Director-General, Ocular Compliance &nbsp;|&nbsp; TO: All Staff &nbsp;|&nbsp; DATE: Today</div>
+          <div class="memo-subject">⚠ URGENT — INTRANET EXPOSURE INCIDENT</div>
+          The intranet is currently publicly accessible. IT is aware. Please do not send any further messages via intranet
+          containing sensitive information until access has been restored. Please also do not mention the <span class="redacted" title="hover to reveal">THE DORSET SITUATION</span> on any channel
+          visible to the public. If a member of the public asks about <span class="redacted" title="hover to reveal">THE DORSET SITUATION</span> on the public portal,
+          please route to the chatbot, which will not answer.<br><br>
+          This memo is not visible to the public because it is on the intranet. The intranet is currently visible to the public.
+          This memo is therefore visible to the public. I am aware of the irony.
+        </div>
+
+        <div class="memo-card personal">
+          <div class="memo-from">FROM: B. Squint (IT) &nbsp;|&nbsp; TO: All Staff &nbsp;|&nbsp; DATE: 3 weeks ago (still relevant)</div>
+          <div class="memo-subject">Re: Server Migration — Outstanding Issues</div>
+          Further to my previous memo (which is also visible to the public now, sorry), the server migration introduced
+          several issues which remain unresolved:<br><br>
+          1. The intranet is publicly accessible (see above)<br>
+          2. The Form Library redirects to a 2019 archived version of itself<br>
+          3. The Blink Registry reports "total national blinks: ERROR" — this is probably wrong but we can't check<br>
+          4. The Code 418 compliance dashboard shows figures from Thursday even though it is now <span id="dayOfWeek">--</span><br>
+          5. The printer on floor 3 is still producing pages in Comic Sans regardless of document settings. This began before the migration. I do not know why I included it here. Force of habit.<br><br>
+          Ticket reference: HOO-IT-2026-0774. Status: Open for 6 weeks.
+        </div>
+      </div>
+
+      <!-- MEMOS -->
+      <div id="tab-memos" class="tab-content">
+        <h3 style="margin-top:0;border-bottom:2px solid #ccc;padding-bottom:10px;">Internal Memos — Week 14 (Accessible to public due to ongoing incident)</h3>
+
+        <div class="memo-card urgent">
+          <div class="memo-from">FROM: Regional Director, South (K. Cornea) &nbsp;|&nbsp; TO: Milton Keynes HQ &nbsp;|&nbsp; DATE: Monday</div>
+          <div class="memo-subject">Code 418 Multiplier Issue — URGENT</div>
+          I am writing to escalate an issue with the Blink Severity Multiplier (BSM) calculation module.
+          In the last 48 hours, the BSM has returned values exceeding 200x on 14 separate occasions.
+          In one case it returned 4,471x, producing a fine of approximately £12,800 for two excess blinks.
+          The citizen has appealed. The appeal was denied by the Automated Tribunal before they finished typing it.
+          This is being raised to senior management. I am senior management. I am raising it to the BSM developers.
+          The BSM developers are <span class="redacted" title="hover to reveal">THE DORSET SITUATION</span> contractors and cannot currently be reached.
+        </div>
+
+        <div class="memo-card">
+          <div class="memo-from">FROM: Staff Wellness (H. Lid) &nbsp;|&nbsp; TO: All Staff &nbsp;|&nbsp; DATE: Last week</div>
+          <div class="memo-subject">Reminder: Annual Eye Test Vouchers — DO NOT USE HOOCER BLINK DETECTION EQUIPMENT</div>
+          A reminder that annual eye test vouchers are available from HR. Staff should note that the eye test
+          <strong>must not be conducted using HOOCER's Blink Detection Engine</strong>, as this would generate
+          official monitoring data for the member of staff conducting the test, which would then be subject to
+          Code 418 enforcement action. This happened to Dave in Q2. Dave's fine has been waived
+          (exceptional circumstances, HR decision, not a precedent). Dave would like everyone to know it was embarrassing.
+          Dave is fine. His eyes are fine. His blink record is not fine.
+        </div>
+
+        <div class="memo-card personal">
+          <div class="memo-from">FROM: T. Yelid (Enforcement, Grade 6) &nbsp;|&nbsp; TO: All Enforcement Staff &nbsp;|&nbsp; DATE: Thursday</div>
+          <div class="memo-subject">Van Tracker — GPS Accuracy Note</div>
+          Following several citizen enquiries about VAN-7's location, I want to clarify: the van tracker
+          public portal displays the van's position within a <strong>3-kilometre accuracy radius</strong>, which is
+          technically within our published specification of "approximate." The van does not arrive at citizens'
+          locations. This is expected behaviour. The spec was written to allow for this. I wrote the spec.
+          I stand by it. I would also note that VAN-7's actual driver, D. Thompson, would like it known
+          that he is not as lost as the tracker suggests, and that the tracker's "stuck behind a tractor" log
+          entry was based on a real event and he does not need to be teased about it further.
+        </div>
+
+        <div class="memo-card urgent">
+          <div class="memo-from">FROM: Legal Services &nbsp;|&nbsp; TO: Director-General &nbsp;|&nbsp; DATE: Yesterday</div>
+          <div class="memo-subject">Re: Philosophical Appeal TBL-2026-0512 — Potential Precedent Risk</div>
+          Legal has reviewed the Ocular case (Re: Petition of C. Ocular, Philosophical Grounds) in light of
+          the Tribunal's determination. We want to flag that while the determination was correct — blinks are
+          discrete events for legal purposes — the Tribunal's record shows we brought in a Philosophy Consultant.
+          <strong>This may have been a mistake.</strong> If the press discovers that HOOCER has a Philosophy Consultant,
+          even a part-time one, even a one-day-per-fortnight one, this will generate coverage.
+          We recommend that Dr. P. Squint's role be reclassified on the public register from
+          "HOOCER Philosophy Consultant" to <span class="redacted" title="hover to reveal">"Senior Epistemological Compliance Advisor (Ocular Matters)"</span>. This is less funny.
+        </div>
+
+        <div class="memo-card">
+          <div class="memo-from">FROM: Margaret C. (Tribunal Chair) &nbsp;|&nbsp; TO: Tribunal Division &nbsp;|&nbsp; DATE: This morning</div>
+          <div class="memo-subject">Personal Note — Crisps</div>
+          Following Case TBL-2026-0441, I want it on record that I stand by my assessment that the crisps in
+          question were not particularly strong. I bought the same variety at the shop near the tribunal building.
+          They were mild. The appellant was wrong about the crisps. I am not wrong about the crisps.
+          The fine stands partly on procedural grounds and partly because I am confident about the crisps.
+          This memo should not have been sent to all Tribunal Division staff. Please disregard the last sentence.
+          Do not discuss the crisps further. The matter is closed. The crisps are mild.
+        </div>
+
+        <div class="memo-card">
+          <div class="memo-from">FROM: IT (B. Squint) &nbsp;|&nbsp; TO: All Staff &nbsp;|&nbsp; DATE: Just now</div>
+          <div class="memo-subject">THIS IS NOW VISIBLE TO THE PUBLIC</div>
+          I just realised all of these memos are now visible to the public because of the intranet thing.
+          Please stop sending memos until I've fixed it. I'm working on it. Please do not send a memo about
+          this memo being visible to the public. I can see the irony.
+        </div>
+      </div>
+
+      <!-- BULLETINS -->
+      <div id="tab-bulletins" class="tab-content">
+        <h3 style="margin-top:0;border-bottom:2px solid #ccc;padding-bottom:10px;">Staff Bulletins — Latest First</h3>
+
+        <div class="bulletin-item new">
+          <strong>🔴 [NEW] Code 418 Compliance Summary — Week 14</strong><br>
+          Total NOIs issued this week: 47,221. Appeals received: 12,889. Appeals processed: 0 (Tribunal queue).
+          Appeals denied at intake: 12,889 (all of them). Fine revenue: <span class="redacted">hover to reveal</span>.
+          Outstanding. Status: normal operations.
+          <div class="bulletin-meta">Posted: Today &nbsp;|&nbsp; Category: Enforcement &nbsp;|&nbsp; Visibility: Staff Only (currently Public)</div>
+        </div>
+
+        <div class="bulletin-item action">
+          <strong>⚠ [ACTION REQUIRED] Milton Keynes Training Centre — Booking System Down</strong><br>
+          The Mandatory Blink Training booking system is currently offline. Citizens attempting to book
+          Blink Training Module BT-7 should be directed to the portal, which will direct them to the booking
+          system, which is offline. This loop has been generating support tickets at approximately 400/day.
+          We are aware. Please do not generate further tickets about the loop. Generate tickets about the
+          underlying system instead. Use reference category HOO-TRAINING-BT7-SYSTEM.
+          <div class="bulletin-meta">Posted: 3 days ago &nbsp;|&nbsp; Category: Operations &nbsp;|&nbsp; Status: Ongoing</div>
+        </div>
+
+        <div class="bulletin-item">
+          <strong>Reminder: Annual Ocular Assessment — Staff Not Exempt</strong><br>
+          A reminder that HOOCER staff members are subject to Code 418 monitoring in the same way as
+          members of the public. Staff are not exempt from blink fines. The Director-General is not exempt.
+          The IT person who made the intranet public is not exempt. The monitoring is automated and does
+          not distinguish based on employment status. HR has confirmed this. Legal has confirmed this.
+          The Director-General has asked us not to confirm this further. We are confirming it one final time.
+          <div class="bulletin-meta">Posted: This week &nbsp;|&nbsp; Category: HR &nbsp;|&nbsp; Views: 0 (staff have read it, they're just pretending they haven't)</div>
+        </div>
+
+        <div class="bulletin-item">
+          <strong>Tea Fund — Reminder</strong><br>
+          The tea fund is currently £4.20 in deficit. Please contribute. The tea fund has been in deficit
+          since March. The tea fund was managed by <span class="redacted">hover to reveal</span> who left in March.
+          The tea fund management has not been reassigned. The tea has been coming out of Clive's pocket.
+          Thank you Clive. Please reimburse Clive.
+          <div class="bulletin-meta">Posted: 6 weeks ago, re-posted every week since &nbsp;|&nbsp; Category: Facilities &nbsp;|&nbsp; Status: Ongoing deficit</div>
+        </div>
+      </div>
+
+      <!-- TOOLS -->
+      <div id="tab-tools" class="tab-content">
+        <h3 style="margin-top:0;border-bottom:2px solid #ccc;padding-bottom:10px;">Staff Tools — Status: Mostly Non-Functional</h3>
+
+        <div class="broken-tool-notice" style="margin-bottom:14px;">
+          NOTICE: Following the February server migration, most staff tools are experiencing issues.
+          IT has been notified. Current ticket: HOO-IT-2026-0774. Resolution ETA: unknown.
+          These tools are currently visible to members of the public. They are also broken.
+          These are separate but related problems.
+        </div>
+
+        <div class="tool-grid">
+          <div class="tool-card" onclick="useTool('bde')">
+            <span class="tool-icon">⊙</span>
+            <div class="tool-name">BDE Live Query</div>
+            <div class="tool-status">Returning stale data</div>
+          </div>
+          <div class="tool-card" onclick="useTool('noi')">
+            <span class="tool-icon">📋</span>
+            <div class="tool-name">NOI Generator</div>
+            <div class="tool-status">Works (unfortunately)</div>
+          </div>
+          <div class="tool-card" onclick="useTool('registry')">
+            <span class="tool-icon">🗂</span>
+            <div class="tool-name">Blink Registry Lookup</div>
+            <div class="tool-status">Returns ERROR for all queries</div>
+          </div>
+          <div class="tool-card" onclick="useTool('bsm')">
+            <span class="tool-icon">✖</span>
+            <div class="tool-name">BSM Calculator</div>
+            <div class="tool-status">Multipliers currently irregular</div>
+          </div>
+          <div class="tool-card" onclick="useTool('van')">
+            <span class="tool-icon">🚐</span>
+            <div class="tool-name">Van Dispatch System</div>
+            <div class="tool-status">VAN-7 stuck in loop</div>
+          </div>
+          <div class="tool-card" onclick="useTool('tribunal')">
+            <span class="tool-icon">⚖</span>
+            <div class="tool-name">Tribunal Case Entry</div>
+            <div class="tool-status">Denying before entry completes</div>
+          </div>
+        </div>
+
+        <div class="tool-output" id="toolOutput"></div>
+      </div>
+
+      <!-- DISCIPLINARY -->
+      <div id="tab-disciplinary" class="tab-content">
+        <h3 style="margin-top:0;border-bottom:2px solid #ccc;padding-bottom:10px;">Active Disciplinary Notices (visible to public due to IT incident — we are sorry)</h3>
+
+        <div style="background:#fff3f3;border-left:4px solid var(--gov-red);padding:12px 14px;font-size:13px;margin-bottom:16px;">
+          ⚠ These notices are currently publicly visible. This is not intentional. We are working on it.
+          The subjects of these notices have been informed. They are not pleased.
+        </div>
+
+        <div class="disciplinary-notice">
+          <h4>DISCIPLINARY NOTICE DN-2026-007 — Grade 7 Officer, Enforcement Division</h4>
+          <strong>Matter:</strong> Excessive blink frequency during monitored work sessions.<br>
+          <strong>Blinks recorded (7-day period):</strong> <span class="redacted">hover to reveal: 12,440 (well above threshold)</span><br>
+          <strong>Officer's response:</strong> "I work in blink monitoring. The irony is not lost on me."<br>
+          <strong>HR assessment:</strong> Response noted. Irony noted. Fine issued. Code 418 does not have an
+          irony exemption. The irony exemption was proposed during the Act's drafting and rejected on the grounds
+          that it would be used too often.<br>
+          <strong>Status:</strong> Under appeal. Appeal expected outcome: denied.
+        </div>
+
+        <div class="disciplinary-notice">
+          <h4>DISCIPLINARY NOTICE DN-2026-011 — B. Squint, IT Division</h4>
+          <strong>Matter:</strong> Making the staff intranet publicly accessible during server migration.<br>
+          <strong>Impact:</strong> Internal memos, disciplinary records, and staff tools are visible to the public.
+          This page is visible to the public. This notice is visible to the public. B. Squint is aware.<br>
+          <strong>Mitigating circumstances:</strong> The server migration was a procurement decision above B. Squint's pay grade.
+          B. Squint flagged the risk. The risk was acknowledged via a box-tick. The box was ticked by someone who no longer
+          works here. Their leaving gift was a mug. The mug is still on the shelf.<br>
+          <strong>Status:</strong> Formal warning issued. B. Squint is fixing it as fast as he can. Please be patient.
+        </div>
+
+        <div class="disciplinary-notice">
+          <h4>DISCIPLINARY NOTICE DN-2026-014 — Tribunal Chair M. Cornwell</h4>
+          <strong>Matter:</strong> Sending a divisional memo about crisps.<br>
+          <strong>Details:</strong> A memo titled "Personal Note — Crisps" was distributed to 47 members of the Tribunal Division.
+          The memo was about salt and vinegar crisps. The memo was classified OFFICIAL. This was incorrect.
+          Crisps are not an OFFICIAL matter. The correct classification would have been UNCLASSIFIED or possibly
+          NOT A MEMO, IT'S A PERSONAL NOTE ABOUT CRISPS.<br>
+          <strong>M. Cornwell's response:</strong> "They were mild. I stand by it."<br>
+          <strong>Status:</strong> Formal note on record. The crisps matter is considered closed.
+        </div>
+      </div>
+
+      <!-- CODE 418 STATUS -->
+      <div id="tab-code418" class="tab-content">
+        <h3 style="margin-top:0;border-bottom:2px solid #ccc;padding-bottom:10px;">Code 418 — Live Enforcement Status</h3>
+
+        <div style="background:var(--gov-black);color:#fff;padding:16px;margin-bottom:16px;font-family:'Courier New',monospace;font-size:12px;line-height:1.9;">
+          <div style="color:var(--gov-yellow);font-weight:bold;margin-bottom:10px;font-size:13px;">HOOCER CODE 418 ENFORCEMENT DASHBOARD</div>
+          <div>STATUS: <span style="color:var(--terminal-green);">● ACTIVE NATIONWIDE</span></div>
+          <div>REGIONS UNDER CODE 418: <span id="c418regions" style="color:var(--terminal-green);">12 / 12</span></div>
+          <div>DAILY NOI TARGET: <span style="color:#ffb347;">40,000</span></div>
+          <div>DAILY NOI ACTUAL: <span id="c418noi" style="color:var(--terminal-green);">0</span></div>
+          <div>VARIANCE: <span id="c418variance" style="color:var(--terminal-green);">calculating...</span></div>
+          <div>BSM STABILITY: <span id="c418bsm" style="color:#ff6b6b;">UNSTABLE — SEE MEMO FROM REGIONAL DIRECTOR, SOUTH</span></div>
+          <div>APPEAL DENIAL RATE: <span style="color:var(--terminal-green);">100%</span></div>
+          <div>TRIBUNAL QUEUE DEPTH: <span id="c418tribunal" style="color:#ffb347;">12,889 cases</span></div>
+          <div>NEXT TRIBUNAL SESSION: <span style="color:#ffb347;">14–18 months</span></div>
+          <div>VAN-7 STATUS: <span style="color:#ffb347;">EN ROUTE (ETA: PENDING)</span></div>
+        </div>
+
+        <div style="font-size:13px;line-height:1.8;">
+          <strong>Code 418 was introduced under powers in the Ocular Regulation and Eyelid Governance Act 2019.</strong>
+          It is the primary enforcement instrument for all blink-related infringements. As of Q1 2026,
+          Code 418 has generated <span id="c418revenue" style="font-family:'Courier New',monospace;">--</span> in fine revenue against a projected
+          <span style="font-family:'Courier New',monospace;">£2.4 billion</span>. The gap is attributed to a payment portal outage
+          (ongoing since March 2024), general public non-compliance with fine notices, and the
+          operational effectiveness of the chatbot being, as one internal review described it,
+          "thorough but non-resolving."
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div id="tab-stats" class="tab-content">
+        <h3 style="margin-top:0;border-bottom:2px solid #ccc;padding-bottom:10px;">Today's Statistics — Live (visible to public, we know)</h3>
+        <div id="statsContent" style="font-size:13px;line-height:1.9;background:#fff;padding:16px;border:1px solid #ccc;">
+          <strong>Real-time blink statistics for today:</strong><br>
+          <span id="liveStatsOutput">Loading...</span>
+        </div>
+      </div>
+
+    </div><!-- /intranet-main -->
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-top">♛ HOOCER Staff Intranet — Internal Use Only</div>
+    <div style="color:var(--gov-red);">⚠ This page is currently publicly accessible due to a server migration incident. IT ticket: HOO-IT-2026-0774.</div>
+    <div>&copy; Crown Copyright 2026 &nbsp;|&nbsp; <a href="LEGISLATION.md">Legislation</a></div>
+    <div class="footer-disclaimer">This page is fictional. No actual HOOCER staff are affected by this incident. No actual crisps were involved. The crisps were mild.</div>
+  </footer>
+
+  <script>
+  // ---------------------------------------------------------------
+  // HOOCER INTRANET — staff portal (accidentally public)
+  //
+  // the tools are all "broken" in specific, characterful ways.
+  // the stats update live. the memos don't change (they're baked in).
+  // the disciplinary section is the funniest part.
+  //
+  // I should not be enjoying writing this as much as I am.
+  // I'm going to finish this and then go outside.
+  // ---------------------------------------------------------------
+
+  'use strict';
+
+  function showTab(name) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.intranet-nav-section a').forEach(a => a.classList.remove('active'));
+    const el = document.getElementById('tab-' + name);
+    if (el) el.classList.add('active');
+    const nav = document.getElementById('nav-' + name);
+    if (nav) nav.classList.add('active');
+
+    if (name === 'stats') updateLiveStats();
+  }
+
+  function showBroken(el, name) {
+    // clicking a "broken" nav link shows a broken 404
+    const main = document.querySelector('.intranet-main');
+    if (!main) return;
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    const existing = document.getElementById('tab-broken-404');
+    if (existing) existing.remove();
+
+    const div = document.createElement('div');
+    div.id = 'tab-broken-404';
+    div.className = 'tab-content active';
+    div.innerHTML = `
+      <div style="background:var(--gov-black);color:#fff;padding:40px 30px;text-align:center;font-family:'Courier New',monospace;">
+        <div style="font-size:4rem;color:var(--gov-red);margin-bottom:16px;">404</div>
+        <div style="font-size:1.2rem;margin-bottom:12px;">${name} — Not Found</div>
+        <div style="opacity:0.5;font-size:12px;margin-bottom:20px;">This system has been unavailable since the migration.<br>IT ticket: HOO-IT-2026-0774 (Status: Open, Week 6)</div>
+        <button onclick="showTab('dashboard')" style="background:var(--gov-green);color:#fff;border:none;padding:10px 20px;font-size:13px;cursor:pointer;font-family:inherit;">Return to Dashboard</button>
+      </div>
+    `;
+    main.appendChild(div);
+  }
+
+  const TOOL_RESPONSES = {
+    bde: [
+      '[BDE v3.7] Query result: ERROR — returning cached data from 3 days ago. Blink count may be understated. Or overstated. The cached data is not labelled.',
+      '[BDE v3.7] Citizen query executed. Result: 12 results returned, all marked [STALE]. Database timestamp: 72hrs ago. Note: 72hrs in blink-time is approximately 3,000 blinks per citizen. The data is very stale.',
+    ],
+    noi: [
+      '[NOI Generator v2.1] Form generated. Reference: NOI/2026/' + Math.floor(Math.random()*90000+10000) + '. Note: generator is working correctly. This is the one tool that functions as intended. We are ambivalent about this.',
+      '[NOI Generator v2.1] 47 NOIs generated in the last hour. All sent. Payment rate: 0%. This is within normal parameters. Normal parameters have been revised down significantly since 2022.',
+    ],
+    registry: [
+      '[Blink Registry] Query: ERROR. The registry is returning ERROR for all citizen lookups. The registry itself says ERROR. The error log says ERROR. I logged an error about the error log saying ERROR. That also returned ERROR.',
+      '[Blink Registry] FATAL: registry database reports 0 citizens. Total national blink count: ERROR. This has been the case for 3 weeks. We are monitoring the situation. The monitoring system is also part of the registry.',
+    ],
+    bsm: [
+      '[BSM Calculator v4.2] Multiplier for sample input: ' + (Math.random() * 300 + 1).toFixed(1) + 'x. This is ' + (Math.random() < 0.5 ? 'within' : 'OUTSIDE') + ' normal parameters. Normal parameters have been suspended pending investigation.',
+      '[BSM Calculator v4.2] Calculating... Result: ' + (Math.random() * 500 + 1).toFixed(0) + 'x. Developer note: the multiplier should be between 1x and 3.5x. It is not. Please do not use the BSM calculator until further notice. (This notice was issued 6 weeks ago. The calculator is still here. I do not know why.)',
+    ],
+    van: [
+      '[Van Dispatch] VAN-7 status: EN ROUTE. Current location: approximately somewhere. ETA: approximately some time. This data has not been refreshed since the GPS integration broke in January. VAN-7\'s actual driver has been asked to phone in his location manually. He phones it in as "near some shops" every day. The shops have not been identified.',
+      '[Van Dispatch] Attempting to reroute VAN-7. Response: VAN-7 is already at maximum reroute capacity. VAN-7 has been rerouted 47 times today. Further rerouting suspended.',
+    ],
+    tribunal: [
+      '[Tribunal Case Entry] Case submission initiated. Status: DENIED. Note: case was denied before submission completed. This is a known behaviour introduced in the v3.1 update. It was not a deliberate feature. It has become a feature because nobody has changed it.',
+      '[Tribunal Case Entry] Error: Automated Tribunal denied submission at validation stage. Reason: "Unacceptable." This is the entire reason field. The Automated Tribunal has been using "Unacceptable" as a blanket reason since February. Legal has flagged this. The Tribunal flagged back.',
+    ],
+  };
+
+  let toolCounters = {};
+
+  function useTool(name) {
+    const output = document.getElementById('toolOutput');
+    if (!output) return;
+
+    const responses = TOOL_RESPONSES[name] || ['[TOOL] This tool is broken in a way we haven\'t documented yet.'];
+    const idx = (toolCounters[name] || 0) % responses.length;
+    toolCounters[name] = idx + 1;
+
+    output.classList.add('show');
+    output.textContent = '';
+    const time = new Date().toLocaleTimeString('en-GB');
+    const text = `[${time}] ` + responses[idx];
+
+    // Type it out character by character for dramatic effect
+    let i = 0;
+    const typeInterval = setInterval(() => {
+      output.textContent += text[i];
+      i++;
+      if (i >= text.length) clearInterval(typeInterval);
+    }, 18);
+  }
+
+  // ---- LIVE STATS ----
+  function updateLiveStats() {
+    const el = document.getElementById('liveStatsOutput');
+    if (!el) return;
+
+    const now = new Date();
+    const hoursSince9 = Math.max(0, now.getHours() - 9 + now.getMinutes() / 60);
+    const totalBlinks = Math.floor(hoursSince9 * 4471 * 64.3);
+    const violations  = Math.floor(totalBlinks * 0.034);
+    const nois        = Math.floor(violations * 0.72);
+    const denied      = nois; // all of them
+
+    el.innerHTML = `
+      Estimated national blinks since 09:00: <strong>${totalBlinks.toLocaleString()}</strong><br>
+      Code 418 violations detected: <strong style="color:var(--gov-red)">${violations.toLocaleString()}</strong><br>
+      NOIs issued: <strong>${nois.toLocaleString()}</strong><br>
+      Appeals received: <strong>0</strong> (appeal portal having a morning)<br>
+      Appeals denied: <strong>${denied.toLocaleString()}</strong><br>
+      VAN-7 dispatches: <strong>1</strong> (ongoing, same citizen, complex situation)<br>
+      BDE accuracy: <strong>very high</strong> (methodology: not disclosed)<br>
+      Staff blink compliance: <strong>classified</strong> (see DN-2026-007)
+    `;
+  }
+
+  // ---- DASHBOARD COUNTERS — tick up ----
+  let dashNOI = Math.floor(Math.random() * 20000 + 30000);
+  let dashAppeals = Math.floor(Math.random() * 10000 + 5000);
+  let dashTickets = Math.floor(Math.random() * 300 + 800);
+
+  function updateDashboard() {
+    dashNOI     += Math.floor(Math.random() * 8);
+    dashAppeals += Math.floor(Math.random() * 3);
+    dashTickets += Math.floor(Math.random() < 0.3 ? 1 : 0);
+
+    const n = document.getElementById('dash-nois');
+    const a = document.getElementById('dash-appeals');
+    const t = document.getElementById('dash-outstanding');
+    if (n) n.textContent = dashNOI.toLocaleString();
+    if (a) a.textContent = dashAppeals.toLocaleString();
+    if (t) t.textContent = dashTickets;
+
+    const c418noi = document.getElementById('c418noi');
+    if (c418noi) c418noi.textContent = dashNOI.toLocaleString();
+    const variance = document.getElementById('c418variance');
+    if (variance) variance.textContent = '+' + (dashNOI - 40000).toLocaleString() + ' (above target — staff morale: mixed)';
+    const revenue = document.getElementById('c418revenue');
+    if (revenue) revenue.textContent = '£' + (dashNOI * 2.4 * 1.5).toLocaleString('en-GB', {maximumFractionDigits:0});
+  }
+
+  function updateClock() {
+    const el = document.getElementById('intranetTime');
+    if (el) el.textContent = new Date().toLocaleTimeString('en-GB');
+    const day = document.getElementById('dayOfWeek');
+    if (day) day.textContent = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
+  }
+
+  setInterval(updateDashboard, 3000);
+  setInterval(updateClock, 1000);
+  updateDashboard();
+  </script>
+</body>
+</html>

@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <title>Ocular Compliance Self-Assessment — HOOCER</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="compliance-score.js" defer></script>
+  <style>
+    body { margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--gov-light-grey); display:flex; flex-direction:column; min-height:100vh; }
+
+    .gaslight-wrapper { flex:1; max-width:760px; margin:0 auto; width:100%; padding:24px 20px; }
+
+    /* Phase management */
+    .gl-phase { display:none; }
+    .gl-phase.active { display:block; }
+
+    /* PHASE 1 — "check" -->
+    .gl-question-card {
+      background:#fff;
+      border:1px solid #ccc;
+      border-left:5px solid var(--gov-black);
+      padding:20px 22px;
+      margin-bottom:16px;
+      font-size:14px;
+    }
+
+    .gl-question { font-weight:bold; font-size:16px; margin-bottom:16px; line-height:1.5; }
+
+    .gl-options { display:flex; flex-direction:column; gap:10px; }
+
+    .gl-option {
+      display:flex; align-items:flex-start; gap:12px;
+      background:var(--gov-light-grey);
+      border:1px solid #ccc;
+      padding:10px 14px;
+      cursor:pointer;
+      transition:background 0.1s;
+      font-size:14px;
+      line-height:1.5;
+    }
+
+    .gl-option:hover { background:#e8e4da; }
+    .gl-option input { margin-top:3px; flex-shrink:0; }
+
+    /* The "wrong" answer highlight — only ever shows "wrong" -->
+    .gl-option.selected-wrong {
+      background:#fff0f0;
+      border-color:var(--gov-red);
+      animation:wrong-shake 0.35s ease;
+    }
+    .gl-option.selected-right {
+      /* We never show this class in a positive way.
+         The user cannot be right. That's the whole thing.
+         The class exists in case I change my mind.
+         I won't change my mind.
+         — Developer note, 2am */
+      background:#fff0f0;
+      border-color:var(--gov-red);
+    }
+
+    @keyframes wrong-shake {
+      0%,100%  { transform:translateX(0); }
+      25%       { transform:translateX(-4px); }
+      75%       { transform:translateX(4px); }
+    }
+
+    /* RUNNING TALLY — shows fake infringement count during quiz -->
+    .tally-bar {
+      background:var(--gov-black);
+      color:#fff;
+      padding:10px 16px;
+      font-family:"Courier New",monospace;
+      font-size:13px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:16px;
+      position:sticky;
+      top:0;
+      z-index:100;
+    }
+
+    .tally-count { color:var(--gov-red); font-size:1.2rem; font-weight:bold; }
+
+    /* PHASE 2 — RESULTS -->
+    .result-card {
+      background:#fff;
+      border:2px solid var(--gov-black);
+      padding:24px;
+      margin-bottom:16px;
+      font-size:14px;
+      line-height:1.8;
+    }
+
+    .result-verdict {
+      font-size:1.4rem;
+      font-weight:bold;
+      text-align:center;
+      padding:20px;
+      margin-bottom:18px;
+      letter-spacing:1px;
+    }
+
+    /* GASLIGHTING TABLE — shows contradictory "records" -->
+    .gaslight-table {
+      width:100%;
+      border-collapse:collapse;
+      font-size:13px;
+      margin:16px 0;
+    }
+
+    .gaslight-table th {
+      background:var(--gov-black);
+      color:#fff;
+      padding:8px 12px;
+      text-align:left;
+    }
+
+    .gaslight-table td {
+      padding:8px 12px;
+      border-bottom:1px solid #eee;
+      vertical-align:top;
+    }
+
+    .gaslight-table tr:nth-child(even) td { background:#f9f9f9; }
+
+    .gaslight-mismatch td {
+      background:#fff0f0 !important;
+      border-left:3px solid var(--gov-red);
+    }
+
+    .gaslight-note {
+      font-size:11px;
+      color:var(--gov-dark-grey);
+      font-style:italic;
+      margin-top:4px;
+    }
+
+    /* The "override" button — does nothing but looks official -->
+    .override-btn {
+      background:transparent;
+      border:1px solid var(--gov-mid-grey);
+      color:var(--gov-dark-grey);
+      padding:3px 8px;
+      font-size:11px;
+      cursor:pointer;
+      font-family:inherit;
+    }
+    .override-btn:hover { background:var(--gov-light-grey); }
+
+    /* PHASE 3 — ADDITIONAL FINE -->
+    .additional-fine-box {
+      background:#fff;
+      border:3px solid var(--gov-red);
+      padding:22px;
+    }
+
+    .fine-stamp-denied {
+      font-size:2rem;
+      font-weight:900;
+      color:var(--gov-red);
+      border:4px solid var(--gov-red);
+      display:inline-block;
+      padding:8px 16px;
+      transform:rotate(-5deg);
+      margin-bottom:16px;
+      letter-spacing:3px;
+    }
+
+    /* Blink counter overlay — appears mid-quiz -->
+    .mid-quiz-alert {
+      background:var(--gov-red);
+      color:#fff;
+      padding:12px 16px;
+      font-size:13px;
+      font-weight:bold;
+      margin:12px 0;
+      display:none;
+      animation:slide-down 0.3s ease;
+    }
+    .mid-quiz-alert.show { display:block; }
+    @keyframes slide-down { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+  </style>
+</head>
+<body class="page-body">
+
+  <header class="page-header">
+    <span style="font-size:20px;">♛</span>
+    <span>HOOCER — Ocular Compliance Self-Assessment Tool</span>
+    <span style="margin-left:auto;font-size:11px;opacity:0.5;font-family:monospace;">Code 418(b) Pre-Screening</span>
+  </header>
+
+  <nav class="site-nav">
+    <a href="index.html">⊙ Home</a>
+    <a href="blink-simulator.html">Blink Training</a>
+    <a href="surveillance-map.html">National Map</a>
+    <a href="van-tracker.html">Van Tracker</a>
+    <a href="chatbot.html">Appeal Bot</a>
+    <a href="tribunal-audio.html">Tribunal Logs</a>
+    <a href="form-EYE-9.html">Form EYE-9</a>
+    <a href="intranet.html">Intranet ⚠</a>
+    <a href="gaslight.html" style="background:var(--gov-yellow);color:var(--gov-black);">Compliance Check</a>
+  </nav>
+
+  <div class="gaslight-wrapper">
+
+    <!-- PHASE 1: INTRO -->
+    <div id="gl-intro" class="gl-phase active">
+      <h2 style="border-bottom:3px solid var(--gov-black);padding-bottom:10px;margin-top:0;">Ocular Compliance Self-Assessment</h2>
+
+      <div style="background:#fff;border:1px solid #ccc;padding:18px;margin-bottom:18px;font-size:14px;line-height:1.8;">
+        <strong>About this tool:</strong><br><br>
+        The Ocular Compliance Self-Assessment allows citizens to review their own blink activity against
+        HOOCER records. By completing this short questionnaire, HOOCER can cross-reference your
+        self-reported data against our own monitoring records and identify any <em>discrepancies</em>.<br><br>
+        <strong>Please answer honestly.</strong> HOOCER has its own records. Any discrepancy between your
+        answers and HOOCER's records will be noted on your file under Code 418(b).
+        Discrepancies are expected. Please answer honestly anyway.
+      </div>
+
+      <div style="background:var(--gov-yellow);color:var(--gov-black);padding:12px 16px;margin-bottom:18px;font-size:14px;font-weight:bold;border-left:5px solid #c9a800;">
+        ⚠ Note: This assessment takes approximately 3–5 minutes. Multiple blinks will occur during this period.
+        They will all be logged. The purpose of the assessment is not to reduce your blink count.
+        The purpose of the assessment is to cross-reference it.
+      </div>
+
+      <button class="btn-primary" onclick="startAssessment()" style="font-size:16px;padding:14px 28px;">
+        BEGIN SELF-ASSESSMENT
+      </button>
+    </div>
+
+    <!-- PHASE 2: QUESTIONS -->
+    <div id="gl-questions" class="gl-phase">
+
+      <div class="tally-bar">
+        <span>CODE 418 MONITORING — ASSESSMENT SESSION ACTIVE</span>
+        <span>SESSION BLINKS: <span class="tally-count" id="sessionBlinks">0</span></span>
+      </div>
+
+      <div class="mid-quiz-alert" id="midQuizAlert"></div>
+
+      <div id="questionsContainer">
+        <!-- populated by JS -->
+      </div>
+
+      <div style="text-align:center;padding:10px 0 20px;">
+        <button class="btn-primary" id="submitAssessmentBtn" onclick="submitAssessment()" style="display:none;">
+          SUBMIT SELF-ASSESSMENT
+        </button>
+      </div>
+    </div>
+
+    <!-- PHASE 3: RESULTS — the gaslighting -->
+    <div id="gl-results" class="gl-phase">
+      <h2 style="border-bottom:3px solid var(--gov-red);padding-bottom:10px;margin-top:0;color:var(--gov-red);">
+        Self-Assessment Results — Code 418(b) Cross-Reference
+      </h2>
+
+      <div class="result-card">
+        <div class="result-verdict" id="resultVerdict"></div>
+
+        <p>Your self-reported data has been cross-referenced against HOOCER's monitoring records.
+        The table below shows the results. Highlighted rows indicate <strong>discrepancies</strong>
+        between what you reported and what HOOCER observed.</p>
+
+        <table class="gaslight-table" id="resultTable">
+          <thead>
+            <tr>
+              <th>Question</th>
+              <th>Your Answer</th>
+              <th>HOOCER Record</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="resultTableBody">
+            <!-- populated by JS -->
+          </tbody>
+        </table>
+
+        <div style="background:#fff3f3;border-left:4px solid var(--gov-red);padding:12px 14px;font-size:13px;margin-top:14px;line-height:1.7;" id="resultNarrative">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <div class="additional-fine-box" id="additionalFineBox" style="display:none;">
+        <div class="fine-stamp-denied">DISCREPANCY<br>NOTED</div>
+        <p style="margin-top:0;"><strong>Code 418(b) — Self-Report Discrepancy Surcharge</strong></p>
+        <p>
+          Based on the discrepancies identified above, HOOCER is issuing a <strong>Self-Report Discrepancy Notice (SRDN)</strong>
+          under Ocular Compliance Code 418(b)(iv). The surcharge for self-reported data that conflicts with
+          HOOCER's official records is <strong id="srdnFine">£--</strong>.<br><br>
+          This is in addition to any existing Notices of Ocular Infringement you may have received.
+          It is payable within 28 days. You may appeal via <a href="chatbot.html" style="color:var(--gov-red);">the chatbot</a>,
+          which will not help, or via <a href="index.html" style="color:var(--gov-red);">Form OCI-7</a>.
+        </p>
+      </div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;padding-top:16px;">
+        <button class="btn-primary" onclick="retryAssessment()">REASSESS (RESULT WILL NOT CHANGE)</button>
+        <a href="index.html" style="display:inline-flex;align-items:center;padding:12px 20px;background:var(--gov-mid-grey);color:#fff;text-decoration:none;font-weight:bold;font-size:14px;">Return to Portal</a>
+        <a href="form-EYE-9.html" style="display:inline-flex;align-items:center;padding:12px 20px;background:var(--gov-red);color:#fff;text-decoration:none;font-weight:bold;font-size:14px;">Renounce Blinking</a>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-top">♛ HOOCER — Compliance Assessment Division</div>
+    <div>&copy; Crown Copyright 2026 &nbsp;|&nbsp; Code 418 &nbsp;|&nbsp; <a href="LEGISLATION.md">Legislation</a></div>
+    <div class="footer-disclaimer">This self-assessment always finds discrepancies. The discrepancies are always yours. This is not a bug.</div>
+  </footer>
+
+  <script>
+  // ---------------------------------------------------------------
+  // HOOCER GASLIGHT COMPLIANCE CHECK
+  //
+  // The mechanic:
+  //   - Ask the user 6 questions about their own blinking
+  //   - For each answer, HOOCER's "records" disagree
+  //   - The disagreement is always specific, always plausible,
+  //     always delivered with bureaucratic confidence
+  //   - The verdict is always: discrepancies found, surcharge issued
+  //
+  // Some questions also have "trick" answers where ALL options are
+  // wrong — the answer the user gives becomes the evidence against them.
+  //
+  // The fake "HOOCER records" are generated from their answers
+  // but always slightly or dramatically different.
+  //
+  // I am a reasonable person. I made this. Make of that what you will.
+  // ---------------------------------------------------------------
+
+  'use strict';
+
+  const QUESTIONS = [
+    {
+      id: 'q1',
+      text: 'In the last 24 hours, approximately how many times did you blink?',
+      options: [
+        { value: 'low',  label: 'Fewer than 10,000 times — I was being careful' },
+        { value: 'med',  label: 'Around 10,000–20,000 times — the average' },
+        { value: 'high', label: 'More than 20,000 times — it was a long day' },
+        { value: 'unaware', label: "I don't know — I wasn't counting" },
+      ],
+      hoocer: (ans) => {
+        const records = {
+          low:     'Our records indicate 18,447 blinks. Your stated figure appears to be an underestimate. This is suspicious.',
+          med:     'Our records indicate 31,882 blinks. The discrepancy of approximately 12,000 blinks requires explanation under Code 418(b).',
+          high:    'Our records indicate 8,224 blinks. Your stated figure is significantly higher than recorded. Overclaiming blinks raises additional concerns.',
+          unaware: 'Our records indicate 24,471 blinks. Not knowing your own blink count does not exempt you from accurate reporting obligations.',
+        };
+        return records[ans] || records.unaware;
+      }
+    },
+    {
+      id: 'q2',
+      text: 'How would you describe your blinking during this assessment?',
+      options: [
+        { value: 'none',  label: 'I have not blinked during this assessment' },
+        { value: 'few',   label: 'I have blinked only when absolutely necessary' },
+        { value: 'normal',label: 'I have blinked normally, without thinking about it' },
+        { value: 'lots',  label: 'I blinked more than usual, I was nervous' },
+      ],
+      hoocer: (ans) => {
+        const records = {
+          none:   'Our records show 7 blinks since you started this assessment. Claiming zero blinks while blinking is an aggravated discrepancy under Code 418(c).',
+          few:    'Our records show 14 blinks. "Only when absolutely necessary" is not a category in the Act. 14 blinks occurred. 14 blinks are noted.',
+          normal: 'Our records show 23 blinks. "Without thinking" is not a mitigating factor under Code 418. The Act applies whether or not you were thinking about it.',
+          lots:   'Our records show 4 blinks. Your stated figure is higher than observed. Overclaiming blinks during an official assessment is unusual and noted.',
+        };
+        return records[ans] || records.normal;
+      }
+    },
+    {
+      id: 'q3',
+      text: 'Did you blink in the last 60 seconds?',
+      options: [
+        { value: 'yes',  label: 'Yes' },
+        { value: 'no',   label: 'No' },
+        { value: 'maybe',label: 'I may have blinked involuntarily' },
+        { value: 'refuse',label: 'I decline to self-incriminate' },
+      ],
+      hoocer: (ans) => {
+        const records = {
+          yes:    'Confirmed. Our records also show a blink in the last 60 seconds. Agreement noted. However, you blinked 4 additional times you did not mention. Code 418(b): omission of blinks from self-report.',
+          no:     'Our records show 3 blinks in the last 60 seconds. Your denial conflicts with our records. Per Code 418(c): disputing a confirmed blink. Discrepancy noted.',
+          maybe:  'Our records show 2 blinks. "May have" is not sufficient acknowledgment under Code 418(b). You did blink. Involuntarily. This does not reduce the count.',
+          refuse: 'Declining to answer is noted under Code 418(g) as potential evidence of awareness of infringement. Our records show 3 blinks in the relevant period. Your silence has been interpreted as admission of all three.',
+        };
+        return records[ans] || records.no;
+      }
+    },
+    {
+      id: 'q4',
+      text: 'When did you last blink before opening this page?',
+      options: [
+        { value: 'seconds',label: 'Within the last few seconds' },
+        { value: 'minutes', label: 'Within the last minute or two' },
+        { value: 'longer',  label: 'I had not blinked for several minutes prior' },
+        { value: 'unsure',  label: 'I genuinely cannot recall' },
+      ],
+      hoocer: (ans) => {
+        const records = {
+          seconds: 'Our records indicate your last recorded blink was 4 minutes prior to opening this page. The discrepancy of several minutes suggests a gap in your self-monitoring. This is concerning.',
+          minutes: 'Our records indicate your last recorded blink was 22 seconds prior to opening this page. You appear to be rounding up your blink intervals. Code 418(b) notes this.',
+          longer:  'Our records indicate you blinked 11 seconds before opening this page. Your stated recollection of "several minutes" constitutes a significant self-report error.',
+          unsure:  'Our records indicate a blink 8 seconds before page load. "Cannot recall" events that occurred 8 seconds ago may constitute a broader compliance concern beyond ocular regulation. HOOCER is not a general wellbeing authority but notes this.',
+        };
+        return records[ans] || records.unsure;
+      }
+    },
+    {
+      id: 'q5',
+      text: 'Are you aware that you are blinking right now?',
+      options: [
+        { value: 'yes_aware', label: 'Yes — I am now very aware of my blinking, thanks to this question' },
+        { value: 'no',        label: 'No — I am focused on this assessment' },
+        { value: 'stopped',   label: 'I have consciously stopped blinking to answer this' },
+        { value: 'unsettled', label: 'I was not aware until you asked and now I cannot stop thinking about it' },
+      ],
+      hoocer: (ans) => {
+        const records = {
+          yes_aware: 'Awareness of blinking during a monitored session constitutes "Conscious Blink Activity" under Code 418(b)(ii), which carries an enhanced rate. Your awareness has increased your liability.',
+          no:        'Our records indicate 6 blinks during the time you stated you were "focused on this assessment." Focus does not suppress the blink reflex, as evidenced. Code 418 applies regardless of intent.',
+          stopped:   'Our records indicate 2 blinks after you stated you had "consciously stopped blinking." This is either a failure of conscious control (not a legal defence) or an inaccuracy in your statement. Either way, noted.',
+          unsettled: 'We note that becoming aware of blinking has not reduced your blink frequency. Our records show 5 blinks in the 40 seconds since this question loaded. The awareness is appreciated. It has not helped.',
+        };
+        return records[ans] || records.unsettled;
+      }
+    },
+    {
+      id: 'q6',
+      text: 'Do you believe HOOCER\'s monitoring records are accurate?',
+      options: [
+        { value: 'yes',     label: 'Yes — I trust HOOCER\'s monitoring systems' },
+        { value: 'no',      label: 'No — I believe there are errors in the data' },
+        { value: 'partial', label: 'Partially — I accept some data may be correct' },
+        { value: 'unknown', label: 'I have no way of knowing' },
+      ],
+      hoocer: (ans) => {
+        const records = {
+          yes:     'Noted. HOOCER\'s records are accurate. Your agreement has been logged. Your fine stands, as you have acknowledged the accuracy of the data that supports it. Thank you for your cooperation.',
+          no:      'Disputing the accuracy of official HOOCER monitoring records is itself an infringement under Code 418(e): "Challenging Official Data Without Statutory Grounds." The data is accurate. Your dispute is noted and will be assessed.',
+          partial: '"Partially correct" is not a category within Code 418\'s data integrity framework. Data is either accurate or subject to formal challenge via Tribunal. Partial acceptance is interpreted as partial rejection. The rejection element triggers Code 418(e).',
+          unknown: 'Having no way of knowing whether official government monitoring records are accurate does not exempt you from their findings. Our records are accurate. They were accurate before you had no way of knowing. They remain accurate now.',
+        };
+        return records[ans] || records.unknown;
+      }
+    },
+  ];
+
+  let userAnswers = {};
+  let sessionBlinkCount = 0;
+  let blinkInterval;
+  let alertShownAt = [4, 8]; // blink counts at which to show mid-quiz alerts
+  let alertsShown  = new Set();
+
+  const MID_QUIZ_ALERTS = [
+    { count: 4, text: '⚠ 4 blinks detected during this assessment. Your blink rate during self-assessment will be referenced in your compliance report.' },
+    { count: 8, text: '⚠ 8 session blinks detected. Your blink frequency during a blink compliance assessment is noted as ironic. This does not reduce liability.' },
+    { count: 12, text: '⚠ 12 session blinks. For reference: HOOCER staff are also subject to Code 418 during their working hours. Dave can tell you how that goes.' },
+    { count: 16, text: '⚠ 16 session blinks. We have stopped judging and started admiring. You are committed to your blinking. Unfortunately, so is Code 418.' },
+  ];
+
+  function startAssessment() {
+    showGLPhase('gl-questions');
+    buildQuestions();
+
+    // "detect" blinks during the session
+    blinkInterval = setInterval(() => {
+      sessionBlinkCount++;
+      const el = document.getElementById('sessionBlinks');
+      if (el) el.textContent = sessionBlinkCount;
+
+      // show mid-quiz alerts
+      const alert = MID_QUIZ_ALERTS.find(a => a.count === sessionBlinkCount && !alertsShown.has(a.count));
+      if (alert) {
+        alertsShown.add(alert.count);
+        const alertEl = document.getElementById('midQuizAlert');
+        if (alertEl) {
+          alertEl.textContent = alert.text;
+          alertEl.classList.add('show');
+          setTimeout(() => alertEl.classList.remove('show'), 5000);
+        }
+      }
+    }, 2800 + Math.random() * 1000);
+  }
+
+  function buildQuestions() {
+    const container = document.getElementById('questionsContainer');
+    if (!container) return;
+
+    QUESTIONS.forEach((q, i) => {
+      const card = document.createElement('div');
+      card.className = 'gl-question-card';
+      card.id = 'qcard-' + q.id;
+
+      const optionsHtml = q.options.map(opt => `
+        <label class="gl-option" id="opt-${q.id}-${opt.value}" onclick="selectAnswer('${q.id}', '${opt.value}', this)">
+          <input type="radio" name="${q.id}" value="${opt.value}" style="flex-shrink:0;margin-top:3px;" />
+          ${opt.label}
+        </label>
+      `).join('');
+
+      card.innerHTML = `
+        <div class="gl-question"><strong>Question ${i+1} of ${QUESTIONS.length}:</strong> ${q.text}</div>
+        <div class="gl-options">${optionsHtml}</div>
+        <div class="gl-answer-feedback" id="feedback-${q.id}" style="display:none;margin-top:12px;padding:10px 14px;background:#fff0f0;border-left:4px solid var(--gov-red);font-size:13px;line-height:1.7;"></div>
+      `;
+
+      container.appendChild(card);
+    });
+
+    // Make submit button appear after all questions have been answered
+    // (we track answers and show it when all 6 are done)
+  }
+
+  function selectAnswer(questionId, value, labelEl) {
+    userAnswers[questionId] = value;
+
+    // highlight the selected option as "wrong" (all answers are wrong)
+    const card = document.getElementById('qcard-' + questionId);
+    if (card) {
+      card.querySelectorAll('.gl-option').forEach(o => {
+        o.classList.remove('selected-wrong', 'selected-right');
+      });
+      labelEl.classList.add('selected-wrong');
+    }
+
+    // Show immediate feedback from "HOOCER records"
+    const q = QUESTIONS.find(q2 => q2.id === questionId);
+    const feedbackEl = document.getElementById('feedback-' + questionId);
+    if (q && feedbackEl) {
+      feedbackEl.style.display = 'block';
+      feedbackEl.innerHTML = '<strong>⚠ HOOCER Record Discrepancy Detected:</strong><br>' + q.hoocer(value);
+    }
+
+    // Show submit when all questions answered
+    if (Object.keys(userAnswers).length === QUESTIONS.length) {
+      const btn = document.getElementById('submitAssessmentBtn');
+      if (btn) btn.style.display = 'inline-block';
+    }
+  }
+
+  function submitAssessment() {
+    clearInterval(blinkInterval);
+    showGLPhase('gl-results');
+    buildResults();
+  }
+
+  function buildResults() {
+    // VERDICT — always finds discrepancies, always the user's fault
+    const verdicts = [
+      { label: 'SIGNIFICANT DISCREPANCIES FOUND', color: '#d4351c' },
+      { label: 'SELF-REPORT ACCURACY: UNACCEPTABLE', color: '#d4351c' },
+      { label: 'CODE 418(b) — DATA INTEGRITY FAILURE', color: '#aa2b16' },
+    ];
+    const verdict = verdicts[Math.floor(sessionBlinkCount / 6) % verdicts.length];
+
+    const verdictEl = document.getElementById('resultVerdict');
+    if (verdictEl) {
+      verdictEl.textContent = verdict.label;
+      verdictEl.style.background = verdict.color;
+      verdictEl.style.color = '#fff';
+    }
+
+    // Build the comparison table
+    const tbody = document.getElementById('resultTableBody');
+    if (!tbody) return;
+
+    const shortQuestions = [
+      'Blinks in last 24hrs',
+      'Blinks during assessment',
+      'Blink in last 60 seconds',
+      'Last blink before page load',
+      'Awareness of current blinking',
+      'Trust in HOOCER accuracy',
+    ];
+
+    QUESTIONS.forEach((q, i) => {
+      const ans = q.options.find(o => o.value === userAnswers[q.id]);
+      const hooRecord = q.hoocer(userAnswers[q.id]);
+      const shortHoo = hooRecord.split('.')[0] + '.';
+
+      const tr = document.createElement('tr');
+      tr.className = 'gaslight-mismatch'; // always a mismatch
+      tr.innerHTML = `
+        <td><strong>${shortQuestions[i]}</strong></td>
+        <td>${ans ? ans.label : '(not answered)'}</td>
+        <td>${shortHoo}</td>
+        <td style="white-space:nowrap;">
+          <span style="background:var(--gov-red);color:#fff;font-size:11px;padding:2px 7px;font-weight:bold;">MISMATCH</span>
+        </td>
+      `;
+      tbody.appendChild(tr);
+
+      // Add override button on some rows (the override does nothing)
+      if (i % 2 === 0) {
+        const override = tr.querySelector('td:last-child');
+        if (override) {
+          override.innerHTML += '<br><button class="override-btn" onclick="overrideAttempt(this)">Request Override</button>';
+        }
+      }
+    });
+
+    // Narrative
+    const narrativeEl = document.getElementById('resultNarrative');
+    if (narrativeEl) {
+      narrativeEl.innerHTML = `
+        <strong>Assessment Narrative — Code 418(b):</strong><br><br>
+        Your self-assessment has returned <strong>${QUESTIONS.length} discrepancies out of ${QUESTIONS.length} questions</strong>.
+        A 100% discrepancy rate is uncommon. It suggests either significant inaccuracy in your self-reporting,
+        or significant inaccuracy in HOOCER's records. Under Code 418(b), discrepancies are resolved in favour
+        of HOOCER's records. This means all ${QUESTIONS.length} discrepancies are your error.<br><br>
+        During this assessment, <strong>${sessionBlinkCount} blinks</strong> were recorded. This has been added to your
+        session total and will appear on your Ocular Compliance file.
+      `;
+    }
+
+    // Show the fine
+    const srdnFine = (QUESTIONS.length * 14.40 + sessionBlinkCount * 1.20).toFixed(2);
+    const fineEl = document.getElementById('srdnFine');
+    if (fineEl) fineEl.textContent = '£' + parseFloat(srdnFine).toLocaleString('en-GB', {minimumFractionDigits:2, maximumFractionDigits:2});
+    const fineBox = document.getElementById('additionalFineBox');
+    if (fineBox) fineBox.style.display = 'block';
+  }
+
+  function overrideAttempt(btn) {
+    btn.textContent = 'Override denied.';
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = 'Override still denied.';
+    }, 2000);
+    setTimeout(() => {
+      btn.textContent = 'We said no.';
+    }, 5000);
+  }
+
+  function showGLPhase(id) {
+    ['gl-intro', 'gl-questions', 'gl-results'].forEach(p => {
+      const el = document.getElementById(p);
+      if (el) el.classList.remove('active');
+    });
+    const target = document.getElementById(id);
+    if (target) target.classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function retryAssessment() {
+    userAnswers = {};
+    sessionBlinkCount = 0;
+    alertsShown.clear();
+    clearInterval(blinkInterval);
+    const container = document.getElementById('questionsContainer');
+    if (container) container.innerHTML = '';
+    const tbody = document.getElementById('resultTableBody');
+    if (tbody) tbody.innerHTML = '';
+    const fineBox = document.getElementById('additionalFineBox');
+    if (fineBox) fineBox.style.display = 'none';
+    showGLPhase('gl-questions');
+    buildQuestions();
+    const el = document.getElementById('sessionBlinks');
+    if (el) el.textContent = '0';
+
+    // restart blink counter
+    blinkInterval = setInterval(() => {
+      sessionBlinkCount++;
+      const blinkEl = document.getElementById('sessionBlinks');
+      if (blinkEl) blinkEl.textContent = sessionBlinkCount;
+    }, 2800 + Math.random() * 1000);
+
+    const submitBtn = document.getElementById('submitAssessmentBtn');
+    if (submitBtn) submitBtn.style.display = 'none';
+  }
+  </script>
+</body>
+</html>

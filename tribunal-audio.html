@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <title>Ocular Tribunal Audio Logs — HOOCER</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="compliance-score.js" defer></script>
+  <style>
+    body { margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--gov-light-grey); display:flex; flex-direction:column; min-height:100vh; }
+
+    .tribunal-layout { flex:1; max-width:860px; margin:0 auto; width:100%; padding:24px 20px; }
+
+    .tribunal-header-box {
+      background:var(--gov-black);
+      color:#fff;
+      padding:18px 22px;
+      margin-bottom:22px;
+      border-left:6px solid var(--gov-yellow);
+    }
+
+    .tribunal-header-box h2 { font-size:1.3rem; margin-bottom:6px; }
+    .tribunal-header-box p  { font-size:13px; opacity:0.65; margin:0; line-height:1.6; }
+
+    .case-list { display:flex; flex-direction:column; gap:14px; }
+
+    .case-card {
+      background:#fff;
+      border:1px solid #ccc;
+      border-left:5px solid var(--gov-black);
+    }
+
+    .case-card.playing { border-left-color:var(--gov-green); }
+    .case-card.error   { border-left-color:var(--gov-red); }
+
+    .case-card-header {
+      padding:14px 18px 10px;
+      border-bottom:1px solid #eee;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .case-title  { font-weight:bold; font-size:15px; }
+    .case-meta   { font-size:11px; color:var(--gov-dark-grey); font-family:"Courier New",monospace; margin-top:3px; }
+
+    .case-outcome {
+      font-size:11px;
+      font-weight:bold;
+      letter-spacing:1px;
+      padding:3px 10px;
+      flex-shrink:0;
+    }
+    .outcome-denied   { background:var(--gov-red); color:#fff; }
+    .outcome-pending  { background:var(--warning-orange); color:#fff; }
+    .outcome-adjourned { background:var(--gov-dark-grey); color:#fff; }
+
+    .case-card-body { padding:14px 18px; }
+
+    .case-summary { font-size:13px; line-height:1.7; color:var(--gov-dark-grey); margin-bottom:12px; }
+
+    .audio-controls {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .btn-play {
+      background:var(--gov-green);
+      color:#fff;
+      border:none;
+      padding:8px 18px;
+      font-size:13px;
+      font-weight:bold;
+      cursor:pointer;
+      font-family:inherit;
+      letter-spacing:0.5px;
+      min-width:90px;
+      transition:background 0.1s;
+    }
+    .btn-play:hover  { background:var(--gov-green-dark); }
+    .btn-play.active { background:var(--gov-red); }
+    .btn-play.active:hover { background:var(--gov-red-dark); }
+
+    .audio-progress-wrapper {
+      flex:1;
+      min-width:80px;
+      height:8px;
+      background:#e0ddd8;
+      cursor:pointer;
+      position:relative;
+      overflow:hidden;
+    }
+    .audio-progress-fill {
+      height:100%;
+      background:var(--gov-green);
+      width:0%;
+      transition:width 0.2s;
+      pointer-events:none;
+    }
+
+    .audio-time { font-size:12px; font-family:"Courier New",monospace; color:var(--gov-dark-grey); flex-shrink:0; }
+
+    .btn-transcript {
+      background:transparent;
+      border:1px solid var(--gov-mid-grey);
+      color:var(--gov-dark-grey);
+      padding:6px 12px;
+      font-size:11px;
+      cursor:pointer;
+      font-family:inherit;
+    }
+    .btn-transcript:hover { background:var(--gov-light-grey); }
+
+    .transcript-box {
+      background:#f8f5ee;
+      border:1px solid #ddd;
+      border-top:none;
+      padding:14px 18px;
+      font-size:12px;
+      font-family:"Courier New",monospace;
+      line-height:1.9;
+      display:none;
+      max-height:260px;
+      overflow-y:auto;
+    }
+    .transcript-box.open { display:block; }
+
+    .transcript-line { margin-bottom:2px; }
+    .tr-chair     { color:#0b0c0c; }
+    .tr-appellant { color:#1d70b8; }
+    .tr-officer   { color:#d4351c; }
+    .tr-clerk     { color:#505a5f; font-style:italic; }
+    .tr-highlight {
+      background:var(--gov-yellow);
+      padding:0 2px;
+    }
+
+    .classification-bar {
+      background:#0b0c0c;
+      color:var(--gov-yellow);
+      font-size:10px;
+      letter-spacing:2.5px;
+      font-family:"Courier New",monospace;
+      padding:4px 18px;
+      display:flex;
+      justify-content:space-between;
+    }
+
+    /* waveform visualiser — fake of course -->
+    .waveform {
+      height:40px;
+      background:#0b0c0c;
+      display:flex;
+      align-items:center;
+      gap:1px;
+      padding:0 8px;
+      overflow:hidden;
+    }
+
+    .wave-bar {
+      flex:1;
+      background:var(--terminal-green);
+      min-width:2px;
+      border-radius:1px;
+      opacity:0.6;
+      transition:height 0.1s;
+    }
+
+    .technical-notice {
+      background:#fff8e1;
+      border-left:4px solid var(--warning-orange);
+      padding:12px 16px;
+      font-size:13px;
+      margin-bottom:20px;
+      line-height:1.7;
+    }
+  </style>
+</head>
+<body class="page-body">
+
+  <header class="page-header">
+    <span style="font-size:20px;">♛</span>
+    <span>HOOCER — Eyelid Tribunal Audio Log Archive</span>
+    <span style="margin-left:auto;font-size:11px;opacity:0.5;font-family:monospace;">Code 418 Tribunal Division</span>
+  </header>
+
+  <nav class="site-nav">
+    <a href="index.html">⊙ Home</a>
+    <a href="blink-simulator.html">Blink Training</a>
+    <a href="surveillance-map.html">National Map</a>
+    <a href="van-tracker.html">Van Tracker</a>
+    <a href="chatbot.html">Appeal Bot</a>
+    <a href="tribunal-audio.html" style="background:var(--gov-yellow);color:var(--gov-black);">Tribunal Logs</a>
+    <a href="form-EYE-9.html">Form EYE-9</a>
+    <a href="intranet.html">Intranet ⚠</a>
+    <a href="gaslight.html">Compliance Check</a>
+  </nav>
+
+  <div class="tribunal-layout">
+
+    <div class="tribunal-header-box">
+      <h2>Ocular Tribunal — Hearing Audio Logs</h2>
+      <p>
+        The following recordings were released under the Freedom of Information Act 2000
+        following a request by a member of the public described in HOOCER's response as
+        "persistent." Audio has been partially redacted in accordance with Code 418(h):
+        <em>Operational Confidentiality of Tribunal Proceedings</em>.
+        Redacted sections are replaced with a tone. The tone was chosen by the IT team.
+        They chose a somewhat ominous one. We asked them to pick something less ominous.
+        They did not.
+      </p>
+    </div>
+
+    <div class="technical-notice">
+      <strong>⚠ Technical Notice:</strong> Audio files are generated locally using the Web Audio API.
+      No audio files are downloaded. If you cannot hear audio, please ensure your device volume
+      is not muted — though if it is, HOOCER considers that a reasonable life choice.
+      Audio playback does not constitute legal review of the cases presented.
+    </div>
+
+    <div class="case-list" id="caseList">
+      <!-- populated by JS -->
+    </div>
+
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-top">♛ HOOCER — Tribunal Division</div>
+    <div>&copy; Crown Copyright 2026 &nbsp;|&nbsp; Code 418 Tribunal Records &nbsp;|&nbsp; <a href="LEGISLATION.md">Legislation</a></div>
+    <div class="footer-disclaimer">Tribunal outcomes are final. All outcomes presented here are denial. This is coincidental and statistically expected.</div>
+  </footer>
+
+  <script>
+  // ---------------------------------------------------------------
+  // HOOCER TRIBUNAL AUDIO LOGS
+  //
+  // The "audio" is generated by the Web Audio API. Each case has a
+  // "script" which drives what tones are played and when the
+  // waveform animates. The transcript is synced line by line.
+  //
+  // It's actually kind of impressive what you can do with
+  // OscillatorNode and GainNode. I should have been doing
+  // this professionally instead of building a blink regulation
+  // website at 1am. Hindsight, etc.
+  //
+  // Each case: different characters, different absurd blink-related
+  // argument, always denied. The Tribunal chair is named Margaret.
+  // Margaret is tired. Margaret has seen things.
+  // ---------------------------------------------------------------
+
+  'use strict';
+
+  const CASES = [
+    {
+      id: 'TBL-2026-0441',
+      title: 'Blinksworth v. HOOCER Enforcement Division',
+      classification: 'OFFICIAL-SENSITIVE',
+      outcome: 'denied',
+      summary: 'Appellant contended that 31 blinks recorded during a 90-second session were "contextually justified" owing to proximity to a recently opened packet of crisps. The Tribunal considered this argument for four minutes and then adjourned for lunch. Upon return, it was denied.',
+      duration: 82, // seconds
+      script: [
+        { t: 0,  text: '[CHAIR] This Tribunal is now in session. Case reference TBL-2026-0441. Present: myself, Tribunal Chair M. Cornwell; HOOCER Enforcement Officer T. Lidds; and the appellant, Mr A. Blinksworth.', speaker: 'chair' },
+        { t: 6,  text: '[CLERK] All rise. (Pause.) You may be seated. (Longer pause.) The chair is already seated. Apologies.', speaker: 'clerk' },
+        { t: 10, text: '[CHAIR] Mr Blinksworth, you are appealing a Notice of Ocular Infringement issued on the fourteenth, alleging 31 excess blinks during a monitored session. How do you plead?', speaker: 'chair' },
+        { t: 16, text: "[APPELLANT] I plead... I'm not sure 'plead' is the right framework here. I would say I contest the characterisation of the blinks as wilful.", speaker: 'appellant' },
+        { t: 21, text: '[CHAIR] They were blinks.', speaker: 'chair' },
+        { t: 22, text: '[APPELLANT] Yes, but contextual blinks.', speaker: 'appellant' },
+        { t: 23, text: '[CHAIR] The Act does not have a contextual blinks category, Mr Blinksworth.', speaker: 'chair' },
+        { t: 26, text: '[OFFICER] The Enforcement Division would note for the record that the appellant blinked twice during that last exchange.', speaker: 'officer' },
+        { t: 30, text: '[APPELLANT] I was making a point.', speaker: 'appellant' },
+        { t: 31, text: '[OFFICER] The record does not distinguish.', speaker: 'officer' },
+        { t: 33, text: '[APPELLANT] There were crisps. Salt and vinegar. The vinegar fumes are well documented as—', speaker: 'appellant' },
+        { t: 37, text: '[CHAIR] We are not here to discuss crisps, Mr Blinksworth.', speaker: 'chair' },
+        { t: 39, text: '[APPELLANT] Schedule 12 covers allium proximity—', speaker: 'appellant' },
+        { t: 41, text: '[CHAIR] Crisps are not alliums. Vinegar is not an allium. Salt is not an allium. The Allium Proximity Defence requires an actual allium within thirty centimetres, actively cut.', speaker: 'chair' },
+        { t: 47, text: '[APPELLANT] The crisps were very strongly flavoured.', speaker: 'appellant' },
+        { t: 49, text: '[CHAIR] I am going to note that and move past it. The Tribunal finds the appeal—', speaker: 'chair' },
+        { t: 52, text: '[REDACTED TONE]', speaker: 'redact', duration: 4 },
+        { t: 56, text: '[CHAIR] —and therefore the fine stands. I would like to add, personally, that I have eaten those crisps and they are quite mild. Appeal denied. This Tribunal is adjourned.', speaker: 'chair' },
+        { t: 62, text: '[CLERK] All rise.', speaker: 'clerk' },
+        { t: 63, text: '[APPELLANT] Can I appeal the denial?', speaker: 'appellant' },
+        { t: 65, text: "[CHAIR] You can appeal to the Sub-Committee. There is a £120 deposit. Today's date is noted as the start of the six-month window.", speaker: 'chair' },
+        { t: 69, text: '[APPELLANT] ...The crisps were really quite strong though.', speaker: 'appellant' },
+        { t: 72, text: '[CHAIR] (silence)', speaker: 'clerk' },
+      ]
+    },
+
+    {
+      id: 'TBL-2026-0512',
+      title: 'Re: Petition of C. Ocular — Philosophical Grounds',
+      classification: 'OFFICIAL — NOT TO BE CITED IN ACADEMIC WORK',
+      outcome: 'denied',
+      summary: 'Citizen C. Ocular argued that blinks, as currently defined in Section 2(a) of the Act, constitute a philosophical continuum rather than discrete events, and therefore cannot be enumerated. The Tribunal Philosophy Advisor was consulted for the first time in the division\'s history. He said "no." Appeal denied.',
+      duration: 75,
+      script: [
+        { t: 0,  text: '[CHAIR] Before we begin, I want to note that this is the first case in the Tribunal\'s history to invoke philosophical grounds. I asked the Philosophy Advisor for his thoughts.', speaker: 'chair' },
+        { t: 7,  text: '[CLERK] Dr. P. Squint, Consultant Philosopher, HOOCER (part-time, one day per fortnight).', speaker: 'clerk' },
+        { t: 10, text: '[PHILOSOPHER] I\'ve reviewed the submission. The argument — that blinks are a phenomenological continuum — is interesting. I read it on the bus. I found it unconvincing.', speaker: 'officer' },
+        { t: 16, text: "[APPELLANT] It's Husserl. It's literally Husserl's theory of time-consciousness applied to eyelid movement.", speaker: 'appellant' },
+        { t: 20, text: "[PHILOSOPHER] I know what Husserl is. Husserl didn't anticipate Code 418. In the context of the Act, a blink is defined as a discrete event. That's a legal definition, not a phenomenological one.", speaker: 'officer' },
+        { t: 27, text: "[APPELLANT] But the law can't just override phenomenology.", speaker: 'appellant' },
+        { t: 29, text: "[CHAIR] I want to be careful here because I don't entirely follow this but my understanding is that for the purposes of this hearing, it can.", speaker: 'chair' },
+        { t: 35, text: "[OFFICER] The Enforcement Division would note that the Act defines a blink as 'involuntary or voluntary closure and reopening of the eyelid.' That's a discrete event.", speaker: 'officer' },
+        { t: 41, text: "[APPELLANT] Closure and reopening — where does closure end and reopening begin? The eyelid doesn't stop between the two. It's one continuous motion. There is no blink. There is only blink-ing. The present participle. The gerund.", speaker: 'appellant' },
+        { t: 50, text: "[CHAIR] I'm going to ask you to stop saying 'gerund' to me.", speaker: 'chair' },
+        { t: 52, text: '[REDACTED TONE]', speaker: 'redact', duration: 3 },
+        { t: 55, text: "[PHILOSOPHER] The appeal is philosophically interesting and legally irrelevant. I've enjoyed it.", speaker: 'officer' },
+        { t: 59, text: "[CHAIR] Appeal denied. The blinks were blinks. They occurred. They are on the record. The gerund has been noted and will not be further considered.", speaker: 'chair' },
+        { t: 65, text: "[APPELLANT] I want to appeal this on phenomenological grounds.", speaker: 'appellant' },
+        { t: 68, text: "[CHAIR] Those are the grounds we just denied. Good afternoon.", speaker: 'chair' },
+      ]
+    },
+
+    {
+      id: 'TBL-2026-0588',
+      title: 'Emergency Hearing — The Staring Contest Incident',
+      classification: 'RESTRICTED — CODE 418 TRIBUNAL DIVISION',
+      outcome: 'adjourned',
+      summary: 'An expedited hearing was convened after a citizen was detected blinking 0 times during a 20-minute session, which HOOCER flagged as "impossibly compliant and therefore suspicious." The citizen alleged they had been in a staring contest. The Tribunal was adjourned when it emerged nobody could verify whether staring contests were covered under existing legislation.',
+      duration: 68,
+      script: [
+        { t: 0,  text: "[CHAIR] This is an unusual one. The citizen registered zero blinks in twenty minutes. Our system flagged it as a Code 418 anomaly — specifically, subcategory 418(i): Suspicious Non-Blinking.", speaker: 'chair' },
+        { t: 8,  text: "[OFFICER] The system is designed to flag both excessive blinking and implausibly low blinking. Both are concerning.", speaker: 'officer' },
+        { t: 12, text: "[CHAIR] Can you explain the zero, please.", speaker: 'chair' },
+        { t: 14, text: "[APPELLANT] I was in a staring contest.", speaker: 'appellant' },
+        { t: 15, text: "[CHAIR] ...A staring contest.", speaker: 'chair' },
+        { t: 17, text: "[APPELLANT] With my nephew. He's seven. I was winning.", speaker: 'appellant' },
+        { t: 20, text: "[OFFICER] The Enforcement Division had not anticipated this scenario.", speaker: 'officer' },
+        { t: 23, text: "[CHAIR] Is that on the record? That we had not anticipated it?", speaker: 'chair' },
+        { t: 25, text: "[OFFICER] It is now.", speaker: 'officer' },
+        { t: 26, text: "[CLERK] For the record: HOOCER had not anticipated the staring contest scenario.", speaker: 'clerk' },
+        { t: 30, text: "[CHAIR] Is a staring contest a mitigating circumstance? I'm looking at Schedule 12. There's onions, there's wind tunnels, there's—", speaker: 'chair' },
+        { t: 36, text: "[OFFICER] Competitive eye-opening is not in Schedule 12.", speaker: 'officer' },
+        { t: 38, text: "[APPELLANT] It should be.", speaker: 'appellant' },
+        { t: 39, text: "[CHAIR] It probably should. That's not the point. The point is—", speaker: 'chair' },
+        { t: 42, text: '[REDACTED TONE]', speaker: 'redact', duration: 5 },
+        { t: 47, text: "[CHAIR] —which raises the question of whether zero blinks is an infringement of a different kind. I'm going to adjourn. I need legal to look at this. Possibly philosophy too.", speaker: 'chair' },
+        { t: 54, text: "[APPELLANT] Does that mean I'm free to go?", speaker: 'appellant' },
+        { t: 56, text: "[CHAIR] You're free to go. Your nephew's testimony may be required. He'll need a parent or guardian. Also, did you win the staring contest?", speaker: 'chair' },
+        { t: 63, text: "[APPELLANT] I blinked just before the session ended. He won.", speaker: 'appellant' },
+        { t: 66, text: "[OFFICER] That's actually in the log.", speaker: 'officer' },
+      ]
+    },
+
+    {
+      id: 'TBL-2026-0601',
+      title: 'H. Yelid — Van Encounter Appeal',
+      classification: 'OFFICIAL',
+      outcome: 'denied',
+      summary: 'Citizen H. Yelid appealed a fine issued after a HOOCER Mobile Enforcement Van observed them through a car window. Citizen argued the van\'s presence was so alarming as to constitute a provocation to blink. The Tribunal found this "understandable but not a statutory defence."',
+      duration: 55,
+      script: [
+        { t: 0,  text: "[CHAIR] H. Yelid, you're appealing a fine issued following a mobile enforcement observation. The officer in VAN-7 recorded seventeen blinks in forty seconds.", speaker: 'chair' },
+        { t: 7,  text: "[APPELLANT] In my defence, there was a van following me.", speaker: 'appellant' },
+        { t: 9,  text: "[OFFICER] It was our van. That is normal operating procedure.", speaker: 'officer' },
+        { t: 12, text: "[APPELLANT] I didn't know that at the time. I thought I was being followed.", speaker: 'appellant' },
+        { t: 15, text: "[CHAIR] You were being followed. That's what a mobile enforcement unit is.", speaker: 'chair' },
+        { t: 18, text: "[APPELLANT] Right, but — the anxiety caused by being followed by a large white van that I didn't initially know was a government vehicle caused me to blink more than I would have otherwise.", speaker: 'appellant' },
+        { t: 26, text: "[CHAIR] The Act does not have an anxiety-related blink exemption.", speaker: 'chair' },
+        { t: 28, text: "[APPELLANT] Shouldn't it?", speaker: 'appellant' },
+        { t: 30, text: "[CHAIR] ...Probably. But it doesn't. Officer, does the van display HOOCER markings?", speaker: 'chair' },
+        { t: 34, text: "[OFFICER] It has a small HOOCER logo on the rear. And the words 'Mobile Ocular Enforcement' in twelve-point Arial.", speaker: 'officer' },
+        { t: 39, text: "[APPELLANT] That's very small lettering.", speaker: 'appellant' },
+        { t: 41, text: "[OFFICER] Fourteen-point on the passenger door, actually. I checked before coming in.", speaker: 'officer' },
+        { t: 45, text: "[CHAIR] The appeal is denied. I would recommend reading van signage more carefully in future, though I appreciate the irony of a blink-regulation agency requiring close visual inspection to identify.", speaker: 'chair' },
+        { t: 53, text: "[APPELLANT] Thank you. I think.", speaker: 'appellant' },
+      ]
+    },
+  ];
+
+  // ---- Audio generation ----
+  let activeAudioCtx = null;
+  let activeCase     = null;
+  let activeSources  = [];
+  let transcriptTimers = [];
+
+  function stopAll() {
+    activeSources.forEach(s => { try { s.stop(); } catch(e){} });
+    activeSources = [];
+    transcriptTimers.forEach(t => clearTimeout(t));
+    transcriptTimers = [];
+
+    // Reset all cards
+    document.querySelectorAll('.case-card').forEach(c => c.classList.remove('playing'));
+    document.querySelectorAll('.btn-play').forEach(b => {
+      b.textContent = '▶ PLAY';
+      b.classList.remove('active');
+    });
+    document.querySelectorAll('.audio-progress-fill').forEach(b => b.style.width = '0%');
+    document.querySelectorAll('.audio-time').forEach(t => t.textContent = '0:00');
+
+    if (activeAudioCtx) {
+      try { activeAudioCtx.close(); } catch(e) {}
+      activeAudioCtx = null;
+    }
+    activeCase = null;
+  }
+
+  function formatTime(s) {
+    return Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+  }
+
+  function playCase(caseData, card) {
+    if (activeCase === caseData.id) {
+      stopAll();
+      return;
+    }
+
+    stopAll();
+    activeCase = caseData.id;
+
+    const btn        = card.querySelector('.btn-play');
+    const progress   = card.querySelector('.audio-progress-fill');
+    const timeEl     = card.querySelector('.audio-time');
+    const waveformEl = card.querySelector('.waveform');
+    const transcript = card.querySelector('.transcript-box');
+
+    btn.textContent = '■ STOP';
+    btn.classList.add('active');
+    card.classList.add('playing');
+
+    // Create audio context
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    activeAudioCtx = ctx;
+
+    const masterGain = ctx.createGain();
+    masterGain.gain.value = 0.3;
+    masterGain.connect(ctx.destination);
+
+    // Background "tribunal room" ambience — very quiet low hum
+    const ambOsc = ctx.createOscillator();
+    const ambGain = ctx.createGain();
+    ambOsc.type = 'sine';
+    ambOsc.frequency.value = 58;
+    ambGain.gain.value = 0.04;
+    ambOsc.connect(ambGain);
+    ambGain.connect(masterGain);
+    ambOsc.start();
+    activeSources.push(ambOsc);
+
+    // Schedule voices for each transcript line
+    caseData.script.forEach(line => {
+      const timer = setTimeout(() => {
+        if (activeCase !== caseData.id) return;
+
+        // Synthesise speech as tone bursts — different character = different pitch
+        if (line.speaker === 'redact') {
+          // The REDACT TONE: ominous 440hz + distortion
+          playRedactTone(ctx, masterGain, line.duration || 3);
+        } else {
+          const pitches = { chair: 200, officer: 280, appellant: 350, clerk: 240, philosopher: 320 };
+          const pitch = pitches[line.speaker] || 260;
+          playVoiceTone(ctx, masterGain, pitch, line.t, caseData.duration);
+        }
+
+        // Animate waveform
+        if (waveformEl) animateWaveform(waveformEl, line.speaker);
+
+        // Highlight transcript line
+        if (transcript && transcript.classList.contains('open')) {
+          const lines = transcript.querySelectorAll('.transcript-line');
+          lines.forEach(l => l.style.background = '');
+          const idx = caseData.script.indexOf(line);
+          if (lines[idx]) {
+            lines[idx].style.background = '#fffacd';
+            lines[idx].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }
+
+      }, line.t * 1000);
+      transcriptTimers.push(timer);
+    });
+
+    // Progress bar
+    const duration = caseData.duration * 1000;
+    const startTime = Date.now();
+    const progressInterval = setInterval(() => {
+      if (activeCase !== caseData.id) { clearInterval(progressInterval); return; }
+      const elapsed = Date.now() - startTime;
+      const pct = Math.min(100, (elapsed / duration) * 100);
+      if (progress) progress.style.width = pct + '%';
+      if (timeEl) timeEl.textContent = formatTime(elapsed / 1000) + ' / ' + formatTime(caseData.duration);
+
+      if (elapsed >= duration) {
+        clearInterval(progressInterval);
+        stopAll();
+      }
+    }, 300);
+    transcriptTimers.push(progressInterval);
+  }
+
+  function playVoiceTone(ctx, dest, freq, startTime, totalDuration) {
+    // Approximate speech rhythm as short bursts of AM-modulated tone
+    // It sounds just enough like a muffled voice to be unsettling
+    const osc   = ctx.createOscillator();
+    const gain  = ctx.createGain();
+    const now   = ctx.currentTime;
+
+    osc.type = 'sawtooth';
+    osc.frequency.value = freq;
+
+    // AM modulation for "voice" rhythm feel
+    const lfo  = ctx.createOscillator();
+    const lfoG = ctx.createGain();
+    lfo.frequency.value = 5 + Math.random() * 3;
+    lfo.type = 'sine';
+    lfoG.gain.value = 0.5;
+    lfo.connect(lfoG);
+    lfoG.connect(gain.gain);
+
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.18, now + 0.08);
+    gain.gain.linearRampToValueAtTime(0.15, now + 0.5);
+    gain.gain.linearRampToValueAtTime(0, now + 1.8);
+
+    osc.connect(gain);
+    gain.connect(dest);
+    osc.start(now);
+    osc.stop(now + 2.2);
+    lfo.start(now);
+    lfo.stop(now + 2.2);
+    activeSources.push(osc, lfo);
+  }
+
+  function playRedactTone(ctx, dest, duration) {
+    // The REDACTION TONE. Ominous. The IT team chose it well.
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const now  = ctx.currentTime;
+
+    osc.type = 'square';
+    osc.frequency.value = 440;
+    osc.frequency.linearRampToValueAtTime(380, now + duration);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.22, now + 0.05);
+    gain.gain.linearRampToValueAtTime(0.22, now + duration - 0.1);
+    gain.gain.linearRampToValueAtTime(0, now + duration);
+
+    osc.connect(gain);
+    gain.connect(dest);
+    osc.start(now);
+    osc.stop(now + duration + 0.1);
+    activeSources.push(osc);
+  }
+
+  function animateWaveform(el, speaker) {
+    const bars = el.querySelectorAll('.wave-bar');
+    bars.forEach(bar => {
+      const h = 4 + Math.random() * 32;
+      bar.style.height = h + 'px';
+    });
+    setTimeout(() => {
+      bars.forEach(bar => { bar.style.height = '3px'; });
+    }, 1800);
+  }
+
+  function toggleTranscript(caseId, btn) {
+    const box = document.getElementById('transcript-' + caseId);
+    if (!box) return;
+    const isOpen = box.classList.contains('open');
+    box.classList.toggle('open', !isOpen);
+    btn.textContent = isOpen ? '📄 Show Transcript' : '📄 Hide Transcript';
+  }
+
+  // Build waveform bars
+  function buildWaveform(el) {
+    for (let i = 0; i < 50; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'wave-bar';
+      bar.style.height = '3px';
+      el.appendChild(bar);
+    }
+  }
+
+  // ---- RENDER CASES ----
+  function buildCaseList() {
+    const list = document.getElementById('caseList');
+    if (!list) return;
+
+    CASES.forEach(c => {
+      const outcomeClass = c.outcome === 'denied' ? 'outcome-denied' :
+                           c.outcome === 'adjourned' ? 'outcome-adjourned' : 'outcome-pending';
+      const outcomeText  = c.outcome === 'denied' ? 'DENIED' :
+                           c.outcome === 'adjourned' ? 'ADJOURNED' : 'PENDING';
+
+      const card = document.createElement('div');
+      card.className = 'case-card';
+      card.id = 'case-' + c.id;
+
+      const transcriptLines = c.script.map((line, idx) => {
+        const cls = line.speaker === 'redact'   ? 'tr-chair' :
+                    line.speaker === 'chair'     ? 'tr-chair' :
+                    line.speaker === 'officer'   ? 'tr-officer' :
+                    line.speaker === 'appellant' ? 'tr-appellant' : 'tr-clerk';
+        return `<div class="transcript-line ${cls}" data-idx="${idx}">${line.text}</div>`;
+      }).join('');
+
+      // Build 50 waveform bars as HTML (we'll store the reference)
+      const waveBarsHtml = Array(50).fill('<div class="wave-bar" style="height:3px;"></div>').join('');
+
+      card.innerHTML = `
+        <div class="classification-bar">
+          <span>${c.classification}</span>
+          <span>${c.id}</span>
+        </div>
+        <div class="case-card-header">
+          <div>
+            <div class="case-title">${c.title}</div>
+            <div class="case-meta">${c.id} &nbsp;|&nbsp; Duration: ${formatTime(c.duration)} &nbsp;|&nbsp; Code 418 Tribunal Division</div>
+          </div>
+          <span class="case-outcome ${outcomeClass}">${outcomeText}</span>
+        </div>
+        <div class="case-card-body">
+          <div class="case-summary">${c.summary}</div>
+          <div class="waveform">${waveBarsHtml}</div>
+          <div class="audio-controls" style="margin-top:10px;">
+            <button class="btn-play" onclick="playCase(CASES.find(x=>x.id==='${c.id}'), document.getElementById('case-${c.id}'))">▶ PLAY</button>
+            <div class="audio-progress-wrapper">
+              <div class="audio-progress-fill"></div>
+            </div>
+            <span class="audio-time">0:00</span>
+            <button class="btn-transcript" onclick="toggleTranscript('${c.id}', this)">📄 Show Transcript</button>
+          </div>
+        </div>
+        <div class="transcript-box" id="transcript-${c.id}">${transcriptLines}</div>
+      `;
+
+      list.appendChild(card);
+    });
+  }
+
+  buildCaseList();
+  </script>
+</body>
+</html>
