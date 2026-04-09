@@ -48,7 +48,7 @@ with one of 34 different bureaucratic accusations, including:
 The training module has never been passed. This is documented in Internal Guidance Note IGN-44.
 
 ### National Blink Surveillance Map
-A live SVG map of the UK with randomly-generated blink events appearing in real time, colour-coded
+A live SVG map (very accurate too) of the UK with randomly-generated blink events appearing in real time, colour-coded
 by compliance level. London always has the worst numbers. They're stressed. It's London. Milton
 Keynes HQ is marked with a gold star. Always watching.
 
